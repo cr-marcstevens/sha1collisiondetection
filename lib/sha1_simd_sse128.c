@@ -1,0 +1,20 @@
+// this file generates sse128 code using sse128 MACROS (simd_sse128.h) and generic SIMD code (sha1_simd.cinc) 
+#ifdef HAVE_SSE
+#include "sha1.h"
+
+#include "simd_sse128.h"
+
+#define SHA1_MESSAGE_EXPANSION_SIMD					sha1_message_expansion_sse128
+#define SHA1_COMPRESSION_SIMD						sha1_sse128
+#define SHA1_COMPRESSION_W_SIMD						sha1_W_sse128
+#define SHA1_COMPRESSION_STATES_SIMD				sha1_states_sse128
+#define SHA1_RECOMPRESSION_SIMD(t)					sha1recompress_fast_ ## t ## _sse128
+#define SHA1_RECOMPRESSION_TABLE_SIMD				sha1_recompression_step_sse128
+
+#include "sha1_simd.cinc"
+
+#else
+
+#pragma message "The file: sha1_simd_sse128.c is not compiled for this architecture."
+
+#endif //HAVE_SSE

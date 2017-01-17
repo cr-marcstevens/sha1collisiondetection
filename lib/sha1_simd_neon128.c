@@ -1,0 +1,20 @@
+// this file generates neon 32x4 code using neon MACROS (arm_neon.h) and generic SIMD code (sha1_simd.cinc) 
+#ifdef HAVE_NEON
+#include "sha1.h"
+
+#include "simd_neon128.h"
+
+#define SHA1_MESSAGE_EXPANSION_SIMD					sha1_message_expansion_neon128
+#define SHA1_COMPRESSION_SIMD						sha1_neon128
+#define SHA1_COMPRESSION_W_SIMD						sha1_W_neon128
+#define SHA1_COMPRESSION_STATES_SIMD				sha1_states_neon128
+#define SHA1_RECOMPRESSION_SIMD(t)					sha1recompress_fast_ ## t ## _neon128
+#define SHA1_RECOMPRESSION_TABLE_SIMD				sha1_recompression_step_neon128
+
+#include "sha1_simd.cinc"
+
+#else
+
+#pragma message "The file: sha1_simd_neon128.c is not compiled for this architecture."
+
+#endif //HAVE_NEON
