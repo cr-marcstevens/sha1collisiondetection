@@ -107,8 +107,8 @@ clean::
 
 .PHONY: test
 test: tools
-	bin/sha1dcsum tools/test/*
-	bin/sha1dcsum_partialcoll tools/test/*
+	bin/sha1dcsum test/*
+	bin/sha1dcsum_partialcoll test/*
 
 .PHONY: tools
 tools: sha1dcsum sha1dcsum_partialcoll
