@@ -1,3 +1,10 @@
+/***
+* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>
+* Distributed under the MIT Software License.
+* See accompanying file LICENSE.txt or copy at
+* https://opensource.org/licenses/MIT
+***/
+
 // this file generates avx256 code using avx256 MACROS (simd_avx256.h) and generic SIMD code (ubc_check_simd.cinc) 
 #ifdef HAVE_AVX
 #include "ubc_check.h"

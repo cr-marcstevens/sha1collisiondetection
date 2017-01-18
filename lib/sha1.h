@@ -1,3 +1,10 @@
+/***
+* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>
+* Distributed under the MIT Software License.
+* See accompanying file LICENSE.txt or copy at
+* https://opensource.org/licenses/MIT
+***/
+
 #include <stdint.h>
 
 // uses SHA-1 message expansion to expand the first 16 words of W[] to 80 words

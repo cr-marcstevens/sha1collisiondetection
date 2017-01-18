@@ -1,3 +1,10 @@
+/***
+* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>
+* Distributed under the MIT Software License.
+* See accompanying file LICENSE.txt or copy at
+* https://opensource.org/licenses/MIT
+***/
+
 // this file generates neon 32x4 code using neon MACROS (arm_neon.h) and generic SIMD code (sha1_simd.cinc) 
 #ifdef HAVE_NEON
 #include "ubc_check.h"

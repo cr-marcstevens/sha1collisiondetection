@@ -1,3 +1,10 @@
+/***
+* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>
+* Distributed under the MIT Software License.
+* See accompanying file LICENSE.txt or copy at
+* https://opensource.org/licenses/MIT
+***/
+
 #include "ubc_check.h"
 
 static const uint32_t DV_I_43_0_bit 	= (uint32_t)(1) << 0;

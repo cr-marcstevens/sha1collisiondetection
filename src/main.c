@@ -1,3 +1,10 @@
+/***
+* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>
+* Distributed under the MIT Software License.
+* See accompanying file LICENSE.txt or copy at
+* https://opensource.org/licenses/MIT
+***/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

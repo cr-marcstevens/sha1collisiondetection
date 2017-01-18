@@ -1,3 +1,10 @@
+/***
+* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>
+* Distributed under the MIT Software License.
+* See accompanying file LICENSE.txt or copy at
+* https://opensource.org/licenses/MIT
+***/
+
 // this header defines SIMD MACROS for avx256 intrinsics
 // used to generate avx256 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc) 
 
