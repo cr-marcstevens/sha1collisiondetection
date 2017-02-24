@@ -15,9 +15,19 @@ CC ?= gcc
 CFLAGS=-O2 -g -Wall -Werror -Wextra -pedantic -std=c99 -Ilib
 LDFLAGS=-O2 -g
 
-LT_CC:=libtool --tag=CC --mode=compile $(CC)
 LT_CC_DEP:=$(CC)
+UNAME:=$(shell uname)
+
+ifeq ($(UNAME),Darwin)
+LT_CC:=$(CC)
+LT_LD:=ld -dylib
+LDFLAGS=
+LIB_EXT=dylib
+else
+LT_CC:=libtool --tag=CC --mode=compile $(CC)
 LT_LD:=libtool --tag=CC --mode=link $(CC)
+LIB_EXT=lo
+endif
 
 MKDIR=mkdir -p
 
@@ -36,6 +46,7 @@ HAVENEON=0
 ifeq ($(TARGET),rpi2)
 HAVENEON=1
 TARGETCFLAGS=-mfpu=neon
+TARGETLDFLAGS=$(TARGETCFLAGS)
 endif
 
 ifeq ($(TARGET),x86)
@@ -43,42 +54,12 @@ HAVEMMX=1
 HAVESSE=1
 HAVEAVX=1
 TARGETCFLAGS ?= -march=native
-endif
-
-ifeq ($(HAVEMMX),1)
-MMXFLAGS=-mmmx
-SIMDCONFIG+= -DHAVE_MMX
+ifeq ($(UNAME),Darwin)
+TARGETLDFLAGS=-dylib -lc
 else
-SIMDCONFIG+= -DNO_HAVE_MMX
+TARGETLDFLAGS=$(TARGETCFLAGS)
 endif
-
-ifeq ($(HAVESSE),1)
-SSEFLAGS=-msse -msse2
-SIMDCONFIG+= -DHAVE_SSE
-else
-SIMDCONFIG+= -DNO_HAVE_SSE
 endif
-
-ifeq ($(HAVEAVX),1)
-AVXFLAGS=-mavx -mavx2
-SIMDCONFIG+= -DHAVE_AVX
-else
-SIMDCONFIG+= -DNO_HAVE_AVX
-endif
-
-ifeq ($(HAVENEON),1)
-NEONFLAGS=-mfpu=neon
-SIMDCONFIG+= -DHAVE_NEON
-else
-SIMDCONFIG+= -DNO_HAVE_NEON
-endif
-
-CFLAGS+= $(SIMDCONFIG) $(TARGETCFLAGS)
-LDFLAGS+= $(TARGETCFLAGS)
-
-
-
-
 
 LIB_DIR=lib
 LIB_DEP_DIR=dep_lib
@@ -87,7 +68,47 @@ SRC_DIR=src
 SRC_DEP_DIR=dep_src
 SRC_OBJ_DIR=obj_src
 
-FS_LIB=$(wildcard ${LIB_DIR}/*.c)
+ifeq ($(HAVEMMX),1)
+MMXFLAGS=-mmmx
+SIMDCONFIG+= -DHAVE_MMX
+SIMDSRC+= $(LIB_DIR)/sha1_simd_mmx64.c $(LIB_DIR)/ubc_check_simd_mmx64.c
+else
+SIMDCONFIG+= -DNO_HAVE_MMX
+endif
+
+ifeq ($(HAVESSE),1)
+SSEFLAGS=-msse -msse2
+SIMDCONFIG+= -DHAVE_SSE
+SIMDSRC+= $(LIB_DIR)/sha1_simd_sse128.c $(LIB_DIR)/ubc_check_simd_sse128.c
+else
+SIMDCONFIG+= -DNO_HAVE_SSE
+endif
+
+ifeq ($(HAVEAVX),1)
+AVXFLAGS=-mavx -mavx2
+SIMDCONFIG+= -DHAVE_AVX
+SIMDSRC+= $(LIB_DIR)/sha1_simd_avx256.c $(LIB_DIR)/ubc_check_simd_avx256.c
+else
+SIMDCONFIG+= -DNO_HAVE_AVX
+endif
+
+ifeq ($(HAVENEON),1)
+NEONFLAGS=-mfpu=neon
+SIMDCONFIG+= -DHAVE_NEON
+SIMDSRC+= $(LIB_DIR)/sha1_simd_neon128.c $(LIB_DIR)/ubc_check_simd_neon128.c
+else
+SIMDCONFIG+= -DNO_HAVE_NEON
+endif
+
+CFLAGS+= $(SIMDCONFIG) $(TARGETCFLAGS)
+LDFLAGS+= $(TARGETLDFLAGS)
+
+
+
+
+
+FS_LIB=$(filter-out $(wildcard ${LIB_DIR}/*_simd_*.c), $(wildcard ${LIB_DIR}/*.c))
+FS_LIB+=$(SIMDSRC)
 FS_SRC=$(wildcard ${SRC_DIR}/*.c)
 FS_OBJ_LIB=$(FS_LIB:${LIB_DIR}/%.c=${LIB_OBJ_DIR}/%.lo)
 FS_OBJ_SRC=$(FS_SRC:${SRC_DIR}/%.c=${SRC_OBJ_DIR}/%.lo)
@@ -110,7 +131,7 @@ clean::
 	-find . -type f -name '*.lo' -print -delete
 	-find . -type f -name '*.so' -print -delete
 	-find . -type d -name '.libs' -print | xargs rm -rv
-	-rm -rf bin/*
+	-rm -rf bin
 
 .PHONY: test
 test: tools
@@ -131,10 +152,10 @@ sha1dcsum_partialcoll: bin/sha1dcsum
 library: bin/libdetectcoll.la
 
 bin/libdetectcoll.la: $(FS_OBJ_LIB)
-	${LD} ${CFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.la
+	${MKDIR} $(shell dirname $@) && ${LD} ${LDFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.$(LIB_EXT)
 
 bin/sha1dcsum: $(FS_OBJ_SRC) library
-	${LD} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum 
+	${CC} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum 
 
 
 ${SRC_DEP_DIR}/%.d: ${SRC_DIR}/%.c
