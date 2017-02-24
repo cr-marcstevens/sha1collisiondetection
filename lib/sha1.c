@@ -1053,7 +1053,7 @@ void SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback)
 	ctx->callback = callback;
 }
 
-void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len) 
+void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 {
 	unsigned left, fill;
 	if (len == 0) 
