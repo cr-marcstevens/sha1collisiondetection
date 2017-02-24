@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 
 #include "sha1.h"
 
@@ -22,7 +23,7 @@ int main(int argc, char** argv)
 
 	if (argc < 2) 
 	{
-		printf("Usage: test <file>\n");
+		printf("Usage: %s <file>\n", basename(argv[0]));
 		return 1;
 	}
 
