@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 			return 1;
 		}
 
-		// feed file through SHA-1 update fuction
+		// feed file through SHA-1 update function
 		while (1) 
 		{
 			size=fread(buffer,1,65536,fd);
