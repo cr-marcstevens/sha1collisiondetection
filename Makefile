@@ -123,7 +123,7 @@ tools: sha1dcsum sha1dcsum_partialcoll
 .PHONY: sha1dcsum
 sha1dcsum: bin/sha1dcsum
 
-.PHONE: sha1dcsum_partialcoll
+.PHONY: sha1dcsum_partialcoll
 sha1dcsum_partialcoll: bin/sha1dcsum
 	cp bin/sha1dcsum bin/sha1dcsum_partialcoll
 	
