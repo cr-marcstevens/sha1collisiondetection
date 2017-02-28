@@ -1,5 +1,5 @@
 /***
-* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>, Dan Shumow (danshu@microsoft.com) 
+* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>, Dan Shumow (danshu@microsoft.com)
 * Distributed under the MIT Software License.
 * See accompanying file LICENSE.txt or copy at
 * https://opensource.org/licenses/MIT
@@ -185,7 +185,7 @@ void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80])
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 30);
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 31);
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 32);
- 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 33);
+	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 33);
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(b, c, d, e, a, W, 34);
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 35);
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 36);
@@ -355,12 +355,12 @@ void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t sta
 	SHA1_STORE_STATE(21)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 21);
-	
+
 #ifdef DOSTORESTATE22
 	SHA1_STORE_STATE(22)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 22);
-	
+
 #ifdef DOSTORESTATE23
 	SHA1_STORE_STATE(23)
 #endif
@@ -385,27 +385,27 @@ void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t sta
 	SHA1_STORE_STATE(27)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 27);
-	
+
 #ifdef DOSTORESTATE28
 	SHA1_STORE_STATE(28)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 28);
-	
+
 #ifdef DOSTORESTATE29
 	SHA1_STORE_STATE(29)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(b, c, d, e, a, W, 29);
-	
+
 #ifdef DOSTORESTATE30
 	SHA1_STORE_STATE(30)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 30);
-	
+
 #ifdef DOSTORESTATE31
 	SHA1_STORE_STATE(31)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 31);
-	
+
 #ifdef DOSTORESTATE32
 	SHA1_STORE_STATE(32)
 #endif
@@ -425,22 +425,22 @@ void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t sta
 	SHA1_STORE_STATE(35)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 35);
-	
+
 #ifdef DOSTORESTATE36
 	SHA1_STORE_STATE(36)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 36);
-	
+
 #ifdef DOSTORESTATE37
 	SHA1_STORE_STATE(37)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 37);
-	
+
 #ifdef DOSTORESTATE38
 	SHA1_STORE_STATE(38)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 38);
-	
+
 #ifdef DOSTORESTATE39
 	SHA1_STORE_STATE(39)
 #endif
@@ -547,7 +547,7 @@ void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t sta
 	SHA1_STORE_STATE(59)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(b, c, d, e, a, W, 59);
-	
+
 
 
 
@@ -826,7 +826,7 @@ void sha1recompress_fast_ ## t (uint32_t ihvin[5], uint32_t ihvout[5], const uin
 	if (t <= 78) HASHCLASH_SHA1COMPRESS_ROUND4_STEP(c, d, e, a, b, me2, 78); \
 	if (t <= 79) HASHCLASH_SHA1COMPRESS_ROUND4_STEP(b, c, d, e, a, me2, 79); \
 	ihvout[0] = ihvin[0] + a; ihvout[1] = ihvin[1] + b; ihvout[2] = ihvin[2] + c; ihvout[3] = ihvin[3] + d; ihvout[4] = ihvin[4] + e; \
-} 
+}
 
 SHA1_RECOMPRESS(0)
 SHA1_RECOMPRESS(1)
@@ -932,7 +932,7 @@ sha1_recompression_type sha1_recompression_step[80] =
 
 
 
-void sha1_process(SHA1_CTX* ctx, const uint32_t block[16]) 
+void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 {
 	unsigned i, j;
 	uint32_t ubc_dv_mask[DVMASKSIZE];
@@ -953,7 +953,7 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	sha1_compression_states(ctx->ihv, ctx->m1, ctx->states);
 	if (ctx->detect_coll)
 	{
-		for (i = 0; sha1_dvs[i].dvType != 0; ++i) 
+		for (i = 0; sha1_dvs[i].dvType != 0; ++i)
 		{
 			if ((0 == ctx->ubc_check) || (((uint32_t)(1) << sha1_dvs[i].maskb) & ubc_dv_mask[sha1_dvs[i].maski]))
 			{
@@ -969,7 +969,7 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 					if (ctx->callback != NULL)
 						ctx->callback(ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2);
 
-					if (ctx->safe_hash) 
+					if (ctx->safe_hash)
 					{
 						sha1_compression_W(ctx->ihv, ctx->m1);
 						sha1_compression_W(ctx->ihv, ctx->m1);
@@ -986,17 +986,17 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 
 
 
-void swap_bytes(uint32_t val[16]) 
+void swap_bytes(uint32_t val[16])
 {
 	unsigned i;
-	for (i = 0; i < 16; ++i) 
+	for (i = 0; i < 16; ++i)
 	{
 		val[i] = ((val[i] << 8) & 0xFF00FF00) | ((val[i] >> 8) & 0xFF00FF);
 		val[i] = (val[i] << 16) | (val[i] >> 16);
 	}
 }
 
-void SHA1DCInit(SHA1_CTX* ctx) 
+void SHA1DCInit(SHA1_CTX* ctx)
 {
 	static const union { unsigned char bytes[4]; uint32_t value; } endianness = { { 0, 1, 2, 3 } };
 	static const uint32_t littleendian = 0x03020100;
@@ -1053,16 +1053,16 @@ void SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback)
 	ctx->callback = callback;
 }
 
-void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len) 
+void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len)
 {
 	unsigned left, fill;
-	if (len == 0) 
+	if (len == 0)
 		return;
 
 	left = ctx->total & 63;
 	fill = 64 - left;
 
-	if (left && len >= fill) 
+	if (left && len >= fill)
 	{
 		ctx->total += fill;
 		memcpy(ctx->buffer + left, buf, fill);
@@ -1073,10 +1073,10 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len)
 		len -= fill;
 		left = 0;
 	}
-	while (len >= 64) 
+	while (len >= 64)
 	{
 		ctx->total += 64;
-		if (!ctx->bigendian) 
+		if (!ctx->bigendian)
 		{
 			memcpy(ctx->buffer, buf, 64);
 			swap_bytes((uint32_t*)(ctx->buffer));
@@ -1087,7 +1087,7 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len)
 		buf += 64;
 		len -= 64;
 	}
-	if (len > 0) 
+	if (len > 0)
 	{
 		ctx->total += len;
 		memcpy(ctx->buffer + left, buf, len);
@@ -1108,7 +1108,7 @@ int SHA1DCFinal(unsigned char output[20], SHA1_CTX *ctx)
 	uint32_t padn = (last < 56) ? (56 - last) : (120 - last);
 	uint64_t total;
 	SHA1DCUpdate(ctx, (const char*)(sha1_padding), padn);
-	
+
 	total = ctx->total - padn;
 	total <<= 3;
 	ctx->buffer[56] = (unsigned char)(total >> 56);

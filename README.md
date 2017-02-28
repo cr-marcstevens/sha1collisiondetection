@@ -18,8 +18,8 @@ They will compute the SHA-1 hash of any given file and additionally will detect 
 
 More specifically they will detect any cryptanalytic collision attack against SHA-1 using any of the top 32 SHA-1 disturbance vectors with probability 1:
 ```
-    I(43,0), I(44,0), I(45,0), I(46,0), I(47,0), I(48,0), I(49,0), I(50,0), I(51,0), I(52,0), 
-    I(46,2), I(47,2), I(48,2), I(49,2), I(50,2), I(51,2), 
+    I(43,0), I(44,0), I(45,0), I(46,0), I(47,0), I(48,0), I(49,0), I(50,0), I(51,0), I(52,0),
+    I(46,2), I(47,2), I(48,2), I(49,2), I(50,2), I(51,2),
     II(45,0), II(46,0), II(47,0), II(48,0), II(49,0), II(50,0), II(51,0), II(52,0), II(53,0), II(54,0), II(55,0), II(56,0),
     II(46,2), II(49,2), II(50,2), II(51,2)
 ```

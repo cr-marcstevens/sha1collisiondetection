@@ -126,7 +126,7 @@ sha1dcsum: bin/sha1dcsum
 .PHONY: sha1dcsum_partialcoll
 sha1dcsum_partialcoll: bin/sha1dcsum
 	cp bin/sha1dcsum bin/sha1dcsum_partialcoll
-	
+
 .PHONY: library
 library: bin/libdetectcoll.la
 
@@ -134,7 +134,7 @@ bin/libdetectcoll.la: $(FS_OBJ_LIB)
 	${LD} ${CFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.la
 
 bin/sha1dcsum: $(FS_OBJ_SRC) library
-	${LD} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum 
+	${LD} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
 
 
 ${SRC_DEP_DIR}/%.d: ${SRC_DIR}/%.c
