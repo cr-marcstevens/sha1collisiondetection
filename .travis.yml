@@ -9,37 +9,6 @@ matrix:
   - os: linux
     compiler: gcc
     env: COMPILER=gcc-4.8
-    addons:
-      apt:
-        packages:
-        - gcc-4.8-base
-  - os: linux
-    compiler: gcc
-    env: COMPILER=gcc-4.9
-    addons:
-      sources:
-        - ubuntu-toolchain-r-test
-      apt:
-        packages:
-        - gcc-4.9-base
-  - os: linux
-    compiler: gcc
-    env: COMPILER=gcc-5
-    addons:
-      sources:
-        - ubuntu-toolchain-r-test
-      apt:
-        packages:
-        - gcc-5-base
-  - os: linux
-    compiler: gcc
-    env: COMPILER=gcc-6
-    addons:
-      sources:
-        - ubuntu-toolchain-r-test
-      apt:
-        packages:
-        - gcc-6-base
   - os: linux
     compiler: clang
     env: COMPILER=clang
@@ -60,4 +29,3 @@ script:
 notifications:
   on_success: change
   on_failure: always
-  
