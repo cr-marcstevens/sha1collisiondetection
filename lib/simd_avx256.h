@@ -6,7 +6,7 @@
 ***/
 
 // this header defines SIMD MACROS for avx256 intrinsics
-// used to generate avx256 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc) 
+// used to generate avx256 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc)
 
 #ifndef SIMD_AVX256_HEADER
 #define SIMD_AVX256_HEADER
@@ -23,7 +23,7 @@
 #define SIMD_WORD			__m256i
 
 #define SIMD_ZERO			_mm256_setzero_si256()
-#define SIMD_WTOV(l)		_mm256_set1_epi32(l)	
+#define SIMD_WTOV(l)		_mm256_set1_epi32(l)
 #define SIMD_ADD_VV(l,r)	_mm256_add_epi32(l,r)
 #define SIMD_ADD_VW(l,r)	_mm256_add_epi32(l, _mm256_set1_epi32(r))
 #define SIMD_SUB_VV(l,r)	_mm256_sub_epi32(l,r)
@@ -50,7 +50,7 @@
 #define SIMD_WORD			__m256i
 
 #define SIMD_ZERO			_mm256_setzero_si256()
-#define SIMD_WTOV(l)		_mm256_set1_epi32(l)	
+#define SIMD_WTOV(l)		_mm256_set1_epi32(l)
 #define SIMD_ADD_VV(l,r)	_mm256_add_epi32(l,r)
 #define SIMD_ADD_VW(l,r)	_mm256_add_epi32(l, _mm256_set1_epi32(r))
 #define SIMD_SUB_VV(l,r)	_mm256_sub_epi32(l,r)

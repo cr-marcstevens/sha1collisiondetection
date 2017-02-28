@@ -5,7 +5,7 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-// this file generates avx256 code using avx256 MACROS (simd_avx256.h) and generic SIMD code (sha1_simd.cinc) 
+// this file generates avx256 code using avx256 MACROS (simd_avx256.h) and generic SIMD code (sha1_simd.cinc)
 
 #ifdef HAVE_AVX
 #include "sha1.h"

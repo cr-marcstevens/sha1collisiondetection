@@ -132,11 +132,11 @@ void SHA1_COMPRESSION_SIMD(SIMD_WORD* ihv, const SIMD_WORD* m)
 	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(c, d, e, a, b, W, 78);
 	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(b, c, d, e, a, W, 79);
 
-	ihv[0] = SIMD_ADD_VV(ihv[0],a); 
-	ihv[1] = SIMD_ADD_VV(ihv[1],b); 
-	ihv[2] = SIMD_ADD_VV(ihv[2],c); 
-	ihv[3] = SIMD_ADD_VV(ihv[3],d); 
-	ihv[4] = SIMD_ADD_VV(ihv[4],e); 
+	ihv[0] = SIMD_ADD_VV(ihv[0],a);
+	ihv[1] = SIMD_ADD_VV(ihv[1],b);
+	ihv[2] = SIMD_ADD_VV(ihv[2],c);
+	ihv[3] = SIMD_ADD_VV(ihv[3],d);
+	ihv[4] = SIMD_ADD_VV(ihv[4],e);
 }
 
 
@@ -229,11 +229,11 @@ void SHA1_COMPRESSION_W_SIMD(SIMD_WORD* ihv, const SIMD_WORD* W)
 	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(c, d, e, a, b, W, 78);
 	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(b, c, d, e, a, W, 79);
 
-	ihv[0] = SIMD_ADD_VV(ihv[0],a); 
-	ihv[1] = SIMD_ADD_VV(ihv[1],b); 
-	ihv[2] = SIMD_ADD_VV(ihv[2],c); 
-	ihv[3] = SIMD_ADD_VV(ihv[3],d); 
-	ihv[4] = SIMD_ADD_VV(ihv[4],e); 
+	ihv[0] = SIMD_ADD_VV(ihv[0],a);
+	ihv[1] = SIMD_ADD_VV(ihv[1],b);
+	ihv[2] = SIMD_ADD_VV(ihv[2],c);
+	ihv[3] = SIMD_ADD_VV(ihv[3],d);
+	ihv[4] = SIMD_ADD_VV(ihv[4],e);
 }
 
 
@@ -358,12 +358,12 @@ void SHA1_COMPRESSION_STATES_SIMD(SIMD_WORD* ihv, const SIMD_WORD* W, SIMD_WORD*
 	SHA1_STORE_STATE(21)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 21);
-	
+
 #ifdef DOSTORESTATE22
 	SHA1_STORE_STATE(22)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 22);
-	
+
 #ifdef DOSTORESTATE23
 	SHA1_STORE_STATE(23)
 #endif
@@ -388,27 +388,27 @@ void SHA1_COMPRESSION_STATES_SIMD(SIMD_WORD* ihv, const SIMD_WORD* W, SIMD_WORD*
 	SHA1_STORE_STATE(27)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 27);
-	
+
 #ifdef DOSTORESTATE28
 	SHA1_STORE_STATE(28)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 28);
-	
+
 #ifdef DOSTORESTATE29
 	SHA1_STORE_STATE(29)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(b, c, d, e, a, W, 29);
-	
+
 #ifdef DOSTORESTATE30
 	SHA1_STORE_STATE(30)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 30);
-	
+
 #ifdef DOSTORESTATE31
 	SHA1_STORE_STATE(31)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 31);
-	
+
 #ifdef DOSTORESTATE32
 	SHA1_STORE_STATE(32)
 #endif
@@ -428,22 +428,22 @@ void SHA1_COMPRESSION_STATES_SIMD(SIMD_WORD* ihv, const SIMD_WORD* W, SIMD_WORD*
 	SHA1_STORE_STATE(35)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 35);
-	
+
 #ifdef DOSTORESTATE36
 	SHA1_STORE_STATE(36)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 36);
-	
+
 #ifdef DOSTORESTATE37
 	SHA1_STORE_STATE(37)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 37);
-	
+
 #ifdef DOSTORESTATE38
 	SHA1_STORE_STATE(38)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 38);
-	
+
 #ifdef DOSTORESTATE39
 	SHA1_STORE_STATE(39)
 #endif
@@ -550,7 +550,7 @@ void SHA1_COMPRESSION_STATES_SIMD(SIMD_WORD* ihv, const SIMD_WORD* W, SIMD_WORD*
 	SHA1_STORE_STATE(59)
 #endif
 	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(b, c, d, e, a, W, 59);
-	
+
 
 
 
@@ -656,11 +656,11 @@ void SHA1_COMPRESSION_STATES_SIMD(SIMD_WORD* ihv, const SIMD_WORD* W, SIMD_WORD*
 
 
 
-	ihv[0] = SIMD_ADD_VV(ihv[0],a); 
-	ihv[1] = SIMD_ADD_VV(ihv[1],b); 
-	ihv[2] = SIMD_ADD_VV(ihv[2],c); 
-	ihv[3] = SIMD_ADD_VV(ihv[3],d); 
-	ihv[4] = SIMD_ADD_VV(ihv[4],e); 
+	ihv[0] = SIMD_ADD_VV(ihv[0],a);
+	ihv[1] = SIMD_ADD_VV(ihv[1],b);
+	ihv[2] = SIMD_ADD_VV(ihv[2],c);
+	ihv[3] = SIMD_ADD_VV(ihv[3],d);
+	ihv[4] = SIMD_ADD_VV(ihv[4],e);
 }
 
 
@@ -846,7 +846,7 @@ void SHA1_RECOMPRESSION_SIMD(tttt) (SIMD_WORD* ihvin, SIMD_WORD* ihvout, const S
 	ihvout[2] = SIMD_ADD_VV(ihvin[2],c); \
 	ihvout[3] = SIMD_ADD_VV(ihvin[3],d); \
 	ihvout[4] = SIMD_ADD_VV(ihvin[4],e); \
-} 
+}
 
 SHA1_RECOMPRESS(0)
 SHA1_RECOMPRESS(1)

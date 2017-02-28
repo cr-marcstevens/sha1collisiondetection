@@ -6,7 +6,7 @@
 ***/
 
 // this header defines SIMD MACROS for sse128 intrinsics
-// used to generate sse128 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc) 
+// used to generate sse128 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc)
 
 #ifndef SIMD_SSE128_HEADER
 #define SIMD_SSE128_HEADER
@@ -22,7 +22,7 @@
 #define SIMD_WORD __m128i
 
 #define SIMD_ZERO			_mm_setzero_si128()
-#define SIMD_WTOV(l)		_mm_set1_epi32(l)	
+#define SIMD_WTOV(l)		_mm_set1_epi32(l)
 #define SIMD_ADD_VV(l,r)	_mm_add_epi32(l,r)
 #define SIMD_ADD_VW(l,r)	_mm_add_epi32(l, _mm_set1_epi32(r))
 #define SIMD_SUB_VV(l,r)	_mm_sub_epi32(l,r)
@@ -49,7 +49,7 @@
 #define SIMD_WORD			__m128i
 
 #define SIMD_ZERO			_mm_setzero_si128()
-#define SIMD_WTOV(l)		_mm_set1_epi32(l)	
+#define SIMD_WTOV(l)		_mm_set1_epi32(l)
 #define SIMD_ADD_VV(l,r)	_mm_add_epi32(l,r)
 #define SIMD_ADD_VW(l,r)	_mm_add_epi32(l, _mm_set1_epi32(r))
 #define SIMD_SUB_VV(l,r)	_mm_sub_epi32(l,r)

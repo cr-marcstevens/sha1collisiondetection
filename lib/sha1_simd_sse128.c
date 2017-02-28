@@ -5,7 +5,7 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-// this file generates sse128 code using sse128 MACROS (simd_sse128.h) and generic SIMD code (sha1_simd.cinc) 
+// this file generates sse128 code using sse128 MACROS (simd_sse128.h) and generic SIMD code (sha1_simd.cinc)
 #ifdef HAVE_SSE
 #include "sha1.h"
 
