@@ -12,7 +12,7 @@ endif
 TARGET ?= x86
 CC ?= gcc
 
-PREFIX=/usr/local
+PREFIX ?= /usr/local
 BINDIR=$(PREFIX)/bin
 LIBDIR=$(PREFIX)/lib
 
