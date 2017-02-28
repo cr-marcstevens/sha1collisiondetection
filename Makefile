@@ -165,9 +165,6 @@ ${SRC_OBJ_DIR}/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 
-${LIB_DEP_DIR}/%.d: ${LIB_DIR}/%.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
-
 ${LIB_DEP_DIR}/%mmx64.d: ${LIB_DIR}/%mmx64.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(MMXFLAGS) -M -MF $@ $<
 
@@ -180,10 +177,10 @@ ${LIB_DEP_DIR}/%avx256.d: ${LIB_DIR}/%avx256.c
 ${LIB_DEP_DIR}/%neon128.d: ${LIB_DIR}/%neon128.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(NEONFLAGS) -M -MF $@ $<
 
+${LIB_DEP_DIR}/%.d: ${LIB_DIR}/%.c
+	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
 
-${LIB_OBJ_DIR}/%.lo ${LIB_OBJ_DIR}/%.o: ${LIB_DIR}/%.c ${LIB_DEP_DIR}/%.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 ${LIB_OBJ_DIR}/%mmx64.lo ${LIB_OBJ_DIR}/%mmx64.o: ${LIB_DIR}/%mmx64.c ${LIB_DEP_DIR}/%mmx64.d
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(MMXFLAGS) -o $@ -c $<
@@ -196,6 +193,9 @@ ${LIB_OBJ_DIR}/%avx256.lo ${LIB_OBJ_DIR}/%avx256.o: ${LIB_DIR}/%avx256.c ${LIB_D
 
 ${LIB_OBJ_DIR}/%neon128.lo ${LIB_OBJ_DIR}/%neon128.o: ${LIB_DIR}/%neon128.c ${LIB_DEP_DIR}/%neon128.d
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(NEONFLAGS) -o $@ -c $<
+
+${LIB_OBJ_DIR}/%.lo ${LIB_OBJ_DIR}/%.o: ${LIB_DIR}/%.c ${LIB_DEP_DIR}/%.d
+	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 
 -include $(FS_DEP)
