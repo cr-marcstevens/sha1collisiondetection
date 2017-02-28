@@ -12,7 +12,7 @@ matrix:
     addons:
       apt:
         packages:
-        - gcc-4.8
+        - gcc-4.8-base
   - os: linux
     compiler: gcc
     env: COMPILER=gcc-4.9
@@ -21,7 +21,7 @@ matrix:
         - ubuntu-toolchain-r-test
       apt:
         packages:
-        - gcc-4.9
+        - gcc-4.9-base
   - os: linux
     compiler: gcc
     env: COMPILER=gcc-5
@@ -30,7 +30,7 @@ matrix:
         - ubuntu-toolchain-r-test
       apt:
         packages:
-        - gcc-5
+        - gcc-5-base
   - os: linux
     compiler: gcc
     env: COMPILER=gcc-6
@@ -39,7 +39,7 @@ matrix:
         - ubuntu-toolchain-r-test
       apt:
         packages:
-        - gcc-6
+        - gcc-6-base
   - os: linux
     compiler: clang
     env: COMPILER=clang
