@@ -12,6 +12,10 @@ endif
 TARGET ?= x86
 CC ?= gcc
 
+PREFIX=/usr/local
+BINDIR=$(PREFIX)/bin
+LIBDIR=$(PREFIX)/lib
+
 CFLAGS=-O2 -g -Wall -Werror -Wextra -pedantic -std=c99 -Ilib
 LDFLAGS=-O2 -g
 
@@ -100,6 +104,18 @@ FS_DEP=$(FS_DEP_SRC) $(FS_DEP_LIB)
 
 .PHONY: all
 all: library tools test
+
+.PHONY: install
+install: all
+	install bin/sha1dcsum $(BINDIR)
+	install bin/sha1dcsum_partialcoll $(BINDIR)
+	install bin/libdetectcoll.la $(LIBDIR)
+
+.PHONY: uninstall
+uninstall:
+	-$(RM) $(BINDIR)/sha1dcsum
+	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
+	-$(RM) $(LIBDIR)/libdetectcoll.la
 
 .PHONY: clean
 clean::
