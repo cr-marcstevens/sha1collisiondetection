@@ -40,6 +40,7 @@ HAVENEON=0
 ifeq ($(TARGET),rpi2)
 HAVENEON=1
 TARGETCFLAGS=-mfpu=neon
+FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_neon128.c)
 endif
 
 ifeq ($(TARGET),x86)
@@ -52,6 +53,7 @@ endif
 ifeq ($(HAVEMMX),1)
 MMXFLAGS=-mmmx
 SIMDCONFIG+= -DHAVE_MMX
+FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_mmx64.c)
 else
 SIMDCONFIG+= -DNO_HAVE_MMX
 endif
@@ -59,6 +61,7 @@ endif
 ifeq ($(HAVESSE),1)
 SSEFLAGS=-msse -msse2
 SIMDCONFIG+= -DHAVE_SSE
+FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_sse128.c)
 else
 SIMDCONFIG+= -DNO_HAVE_SSE
 endif
@@ -66,6 +69,7 @@ endif
 ifeq ($(HAVEAVX),1)
 AVXFLAGS=-mavx -mavx2
 SIMDCONFIG+= -DHAVE_AVX
+FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_avx256.c)
 else
 SIMDCONFIG+= -DNO_HAVE_AVX
 endif
@@ -73,6 +77,7 @@ endif
 ifeq ($(HAVENEON),1)
 NEONFLAGS=-mfpu=neon
 SIMDCONFIG+= -DHAVE_NEON
+FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_neon128.c)
 else
 SIMDCONFIG+= -DNO_HAVE_NEON
 endif
@@ -91,7 +96,8 @@ SRC_DIR=src
 SRC_DEP_DIR=dep_src
 SRC_OBJ_DIR=obj_src
 
-FS_LIB=$(wildcard ${LIB_DIR}/*.c)
+FS_LIB=$(filter-out $(wildcard ${LIB_DIR}/*_simd_*.c),$(wildcard ${LIB_DIR}/*.c))
+FS_LIB+=$(FS_LIB_SIMD)
 FS_SRC=$(wildcard ${SRC_DIR}/*.c)
 FS_OBJ_LIB=$(FS_LIB:${LIB_DIR}/%.c=${LIB_OBJ_DIR}/%.lo)
 FS_OBJ_SRC=$(FS_SRC:${SRC_DIR}/%.c=${SRC_OBJ_DIR}/%.lo)
