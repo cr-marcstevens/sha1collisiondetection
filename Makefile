@@ -110,7 +110,7 @@ clean::
 	-find . -type f -name '*.lo' -print -delete
 	-find . -type f -name '*.so' -print -delete
 	-find . -type d -name '.libs' -print | xargs rm -rv
-	-rm -rf bin/*
+	-rm -rf bin
 
 .PHONY: test
 test: tools
@@ -131,7 +131,7 @@ sha1dcsum_partialcoll: bin/sha1dcsum
 library: bin/libdetectcoll.la
 
 bin/libdetectcoll.la: $(FS_OBJ_LIB)
-	${LD} ${CFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.la
+	${MKDIR} $(shell dirname $@) && ${LD} ${CFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.la
 
 bin/sha1dcsum: $(FS_OBJ_SRC) library
 	${LD} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
