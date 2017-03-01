@@ -147,7 +147,7 @@ sha1dcsum: bin/sha1dcsum
 
 .PHONY: sha1dcsum_partialcoll
 sha1dcsum_partialcoll: bin/sha1dcsum
-	cp bin/sha1dcsum bin/sha1dcsum_partialcoll
+	-ln -s sha1dcsum bin/sha1dcsum_partialcoll
 
 .PHONY: library
 library: bin/libdetectcoll.la
