@@ -4,24 +4,18 @@ dist: trusty
 
 language: c
 
+os:
+- linux
+- osx
+
+compiler:
+- gcc
+- clang
+
 matrix:
-  include:
-  - os: linux
-    compiler: gcc
-    env: COMPILER=gcc-4.8
-  - os: linux
-    compiler: clang
-    env: COMPILER=clang
+  allow_failures:
   - os: osx
-    compiler: clang
-    env: COMPILER=clang
-    before_install:
-      - brew install libtool
-
-install:
-  - export CC="$COMPILER"
-  - $CC --version
-
+  
 script:
   - make
   - make test
