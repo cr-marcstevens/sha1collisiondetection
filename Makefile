@@ -11,6 +11,7 @@ TARGET ?= rpi2
 endif
 TARGET ?= x86
 CC ?= gcc
+CPPC ?= g++
 
 PREFIX ?= /usr/local
 BINDIR=$(PREFIX)/bin
@@ -18,10 +19,17 @@ LIBDIR=$(PREFIX)/lib
 
 CFLAGS=-O2 -g -Wall -Werror -Wextra -pedantic -std=c99 -Ilib
 LDFLAGS=-O2 -g
+CPPFLAGS=-O2 -g -Ilib
 
 LT_CC:=libtool --tag=CC --mode=compile $(CC)
 LT_CC_DEP:=$(CC)
 LT_LD:=libtool --tag=CC --mode=link $(CC)
+
+LT_CPPC:=libtool --tag=CXX --mode=compile $(CPPC)
+LT_CPPC_DEP:=$(CPPC)
+LT_LD_CPPC:=libtool --tag=CXX --mode=link $(CPPC)
+
+BOOSTLIBS=/usr/lib/x86_64-linux-gnu/libboost_system.a /usr/lib/x86_64-linux-gnu/libboost_timer.a /usr/lib/x86_64-linux-gnu/libboost_program_options.a /usr/lib/x86_64-linux-gnu/libboost_timer.a /usr/lib/x86_64-linux-gnu/libboost_chrono.a
 
 MKDIR=mkdir -p
 
@@ -29,8 +37,9 @@ CC=${LT_CC}
 CC_DEP=${LT_CC_DEP}
 LD=${LT_LD}
 
-
-
+CPPC=${LT_CPPC}
+CPPC_DEP=${LT_CPPC_DEP}
+LD_CPPC=${LT_LD_CPPC}
 
 HAVEMMX=0
 HAVESSE=0
@@ -95,33 +104,27 @@ LIB_OBJ_DIR=obj_lib
 SRC_DIR=src
 SRC_DEP_DIR=dep_src
 SRC_OBJ_DIR=obj_src
+PERF_DIR=perf
+PERF_DEP_DIR=dep_perf
+PERF_OBJ_DIR=obj_perf
 
 FS_LIB=$(filter-out $(wildcard ${LIB_DIR}/*_simd_*.c),$(wildcard ${LIB_DIR}/*.c))
 FS_LIB+=$(FS_LIB_SIMD)
 FS_SRC=$(wildcard ${SRC_DIR}/*.c)
+FS_PERF=${wildcard ${PERF_DIR}/*.cpp}
 FS_OBJ_LIB=$(FS_LIB:${LIB_DIR}/%.c=${LIB_OBJ_DIR}/%.lo)
 FS_OBJ_SRC=$(FS_SRC:${SRC_DIR}/%.c=${SRC_OBJ_DIR}/%.lo)
-FS_OBJ=$(FS_OBJ_SRC) $(FS_OBJ_LIB)
+FS_OBJ_PERF=$(FS_PERF:${PERF_DIR}/%.cpp=${PERF_OBJ_DIR}/%.lo)
+FS_OBJ=$(FS_OBJ_SRC) $(FS_OBJ_LIB) $(FS_OBJ_PERF)
 FS_DEP_LIB=$(FS_LIB:${LIB_DIR}/%.c=${LIB_DEP_DIR}/%.d)
 FS_DEP_SRC=$(FS_SRC:${SRC_DIR}/%.c=${SRC_DEP_DIR}/%.d)
-FS_DEP=$(FS_DEP_SRC) $(FS_DEP_LIB)
+FS_DEP_PERF=$(FS_PERF:${PERF_DIR}/%.cpp=${PERF_DEP_DIR}/%.d)
+FS_DEP=$(FS_DEP_SRC) $(FS_DEP_LIB) $(FS_DEP_PERF)
 
-.SUFFIXES: .c .d
+.SUFFIXES: .c .d .cpp
 
 .PHONY: all
-all: library tools test
-
-.PHONY: install
-install: all
-	install bin/sha1dcsum $(BINDIR)
-	install bin/sha1dcsum_partialcoll $(BINDIR)
-	install bin/libdetectcoll.la $(LIBDIR)
-
-.PHONY: uninstall
-uninstall:
-	-$(RM) $(BINDIR)/sha1dcsum
-	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
-	-$(RM) $(LIBDIR)/libdetectcoll.la
+all: library tools test perf
 
 .PHONY: clean
 clean::
@@ -152,12 +155,17 @@ sha1dcsum_partialcoll: bin/sha1dcsum
 .PHONY: library
 library: bin/libdetectcoll.la
 
+.PHONY: perf
+perf: bin/perftest
+
 bin/libdetectcoll.la: $(FS_OBJ_LIB)
 	${MKDIR} $(shell dirname $@) && ${LD} ${CFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.la
 
 bin/sha1dcsum: $(FS_OBJ_SRC) library
 	${LD} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
 
+bin/perftest: $(FS_OBJ_PERF) $(FS_OBJ_LIB) library
+	${LD_CPPC} ${CPPFLAGS} $(FS_OBJ_PERF) $(FS_OBJ_LIB) $(BOOSTLIBS) -Lbin -ldetectcoll -o bin/perftest
 
 ${SRC_DEP_DIR}/%.d: ${SRC_DIR}/%.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
@@ -178,9 +186,12 @@ ${LIB_DEP_DIR}/%sse128.d: ${LIB_DIR}/%sse128.c
 ${LIB_DEP_DIR}/%avx256.d: ${LIB_DIR}/%avx256.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(AVXFLAGS) -M -MF $@ $<
 
-${LIB_DEP_DIR}/%neon128.d: ${LIB_DIR}/%neon128.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(NEONFLAGS) -M -MF $@ $<
 
+${LIB_DEP_DIR}/%neon128.d: ${LIB_DIR}/%neon128.c
+	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(NEONFLAGS) -M -MF $@ $< 
+
+${PERF_DEP_DIR}/%.d: ${PERF_DIR}/%.cpp
+	${MKDIR} $(shell dirname $@) && $(CPPC_DEP) $(CPPFLAGS) -M -MF $@ $< 
 
 
 ${LIB_OBJ_DIR}/%.lo ${LIB_OBJ_DIR}/%.o: ${LIB_DIR}/%.c ${LIB_DEP_DIR}/%.d
@@ -197,6 +208,9 @@ ${LIB_OBJ_DIR}/%avx256.lo ${LIB_OBJ_DIR}/%avx256.o: ${LIB_DIR}/%avx256.c ${LIB_D
 
 ${LIB_OBJ_DIR}/%neon128.lo ${LIB_OBJ_DIR}/%neon128.o: ${LIB_DIR}/%neon128.c ${LIB_DEP_DIR}/%neon128.d
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(NEONFLAGS) -o $@ -c $<
+
+${PERF_OBJ_DIR}/%.lo ${PERF_OBJ_DIR}/%.o: ${PERF_DIR}/%.cpp ${PERF_DEP_DIR}/%.d
+	${MKDIR} $(shell dirname $@) && $(CPPC) $(CPPFLAGS) -o $@ -c $<
 
 
 -include $(FS_DEP)
