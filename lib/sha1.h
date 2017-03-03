@@ -91,7 +91,7 @@ void SHA1DCSetDetectReducedRoundCollision(SHA1_CTX*, int);
 void SHA1DCSetCallback(SHA1_CTX*, collision_block_callback);
 
 /* update SHA-1 context with buffer contents */
-void SHA1DCUpdate(SHA1_CTX*, const char*, unsigned);
+void SHA1DCUpdate(SHA1_CTX*, const char*, size_t);
 
 /* obtain SHA-1 hash from SHA-1 context */
 /* returns: 0 = no collision detected, otherwise = collision found => warn user for active attack */
