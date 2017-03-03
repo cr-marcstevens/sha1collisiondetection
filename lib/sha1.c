@@ -1001,8 +1001,6 @@ void swap_bytes(uint32_t val[16])
 
 void SHA1DCInit(SHA1_CTX* ctx)
 {
-	static const union { unsigned char bytes[4]; uint32_t value; } endianness = { { 0, 1, 2, 3 } };
-	static const uint32_t littleendian = 0x03020100;
 	ctx->total = 0;
 	ctx->ihv[0] = 0x67452301;
 	ctx->ihv[1] = 0xEFCDAB89;
@@ -1014,7 +1012,6 @@ void SHA1DCInit(SHA1_CTX* ctx)
 	ctx->ubc_check = 1;
 	ctx->detect_coll = 1;
 	ctx->reduced_round_coll = 0;
-	ctx->bigendian = (endianness.value != littleendian);
 	ctx->callback = NULL;
 }
 
@@ -1069,8 +1066,9 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len)
 	{
 		ctx->total += fill;
 		memcpy(ctx->buffer + left, buf, fill);
-		if (!ctx->bigendian)
-			swap_bytes((uint32_t*)(ctx->buffer));
+#if defined(BIGENDIAN)
+		swap_bytes((uint32_t*)(ctx->buffer));
+#endif /*defined(BIGENDIAN)*/
 		sha1_process(ctx, (uint32_t*)(ctx->buffer));
 		buf += fill;
 		len -= fill;
@@ -1079,14 +1077,13 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len)
 	while (len >= 64)
 	{
 		ctx->total += 64;
-		if (!ctx->bigendian)
-		{
-			memcpy(ctx->buffer, buf, 64);
-			swap_bytes((uint32_t*)(ctx->buffer));
-			sha1_process(ctx, (uint32_t*)(ctx->buffer));
-		}
-		else
-			sha1_process(ctx, (uint32_t*)(buf));
+#if defined(BIGENDIAN)
+                sha1_process(ctx, (uint32_t*)(buf));
+#else
+		memcpy(ctx->buffer, buf, 64);
+		swap_bytes((uint32_t*)(ctx->buffer));
+		sha1_process(ctx, (uint32_t*)(ctx->buffer));
+#endif
 		buf += 64;
 		len -= 64;
 	}
@@ -1122,8 +1119,9 @@ int SHA1DCFinal(unsigned char output[20], SHA1_CTX *ctx)
 	ctx->buffer[61] = (unsigned char)(total >> 16);
 	ctx->buffer[62] = (unsigned char)(total >> 8);
 	ctx->buffer[63] = (unsigned char)(total);
-	if (!ctx->bigendian)
-		swap_bytes((uint32_t*)(ctx->buffer));
+#if !defined(BIGENDIAN)
+	swap_bytes((uint32_t*)(ctx->buffer));
+#endif
 	sha1_process(ctx, (uint32_t*)(ctx->buffer));
 	output[0] = (unsigned char)(ctx->ihv[0] >> 24);
 	output[1] = (unsigned char)(ctx->ihv[0] >> 16);

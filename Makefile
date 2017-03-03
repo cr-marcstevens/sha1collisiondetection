@@ -48,7 +48,7 @@ HAVENEON=0
 
 ifeq ($(TARGET),rpi2)
 HAVENEON=1
-TARGETCFLAGS=-mfpu=neon
+TARGETCFLAGS=-mfpu=neon -DBIGENDIAN
 FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_neon128.c)
 endif
 

@@ -43,7 +43,6 @@ typedef struct {
 	uint64_t total;
 	uint32_t ihv[5];
 	unsigned char buffer[64];
-	int bigendian;
 	int found_collision;
 	int safe_hash;
 	int detect_coll;
