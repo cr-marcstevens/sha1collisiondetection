@@ -6,25 +6,41 @@
 ##
 
 PREFIX ?= /usr/local
-BINDIR=$(PREFIX)/bin
-LIBDIR=$(PREFIX)/lib
+BINDIR=$(PREFIX)/bin/
+LIBDIR=$(PREFIX)/lib/
+
+CC ?= gcc
+LD ?= gcc
+CC_DEP ?= $(CC)
+LIBTOOL ?= libtool
+INSTALL ?= install
+
 
 CFLAGS=-O2 -Wall -Werror -Wextra -pedantic -std=c90 -Ilib
-LDFLAGS=-O2 
+LDFLAGS=
 
-LT_CC:=libtool --tag=CC --mode=compile $(CC)
+LT_CC:=$(LIBTOOL) --tag=CC --mode=compile $(CC)
 LT_CC_DEP:=$(CC)
-LT_LD:=libtool --tag=CC --mode=link $(CC)
-INSTALL:=libtool --tag=CC --mode=install install
+LT_LD:=$(LIBTOOL) --tag=CC --mode=link $(CC)
+LT_INSTALL:=$(LIBTOOL) --tag=CC --mode=install $(INSTALL)
 
 MKDIR=mkdir -p
 
-CC=${LT_CC}
-CC_DEP=${LT_CC_DEP}
-LD=${LT_LD}
+ifneq (, $(shell which $(LIBTOOL) 2>/dev/null ))
+CC=$(LT_CC)
+CC_DEP=$(LT_CC_DEP)
+LD=$(LT_LD)
+LDLIB=$(LT_LD)
+INSTALL=$(LT_INSTALL)
+LIB_EXT=la
+else
+LIB_EXT=a
+LD=$(CC)
+endif
 
-CFLAGS+= $(TARGETCFLAGS)
-LDFLAGS+= $(TARGETCFLAGS)
+CFLAGS+=$(TARGETCFLAGS)
+LDFLAGS+=$(TARGETLDFLAGS)
+
 
 LIB_DIR=lib
 LIB_DEP_DIR=dep_lib
@@ -33,14 +49,13 @@ SRC_DIR=src
 SRC_DEP_DIR=dep_src
 SRC_OBJ_DIR=obj_src
 
-FS_LIB=$(wildcard ${LIB_DIR}/*.c)
-FS_LIB+=$(FS_LIB_SIMD)
-FS_SRC=$(wildcard ${SRC_DIR}/*.c)
-FS_OBJ_LIB=$(FS_LIB:${LIB_DIR}/%.c=${LIB_OBJ_DIR}/%.lo)
-FS_OBJ_SRC=$(FS_SRC:${SRC_DIR}/%.c=${SRC_OBJ_DIR}/%.lo)
+FS_LIB=$(wildcard $(LIB_DIR)/*.c)
+FS_SRC=$(wildcard $(SRC_DIR)/*.c)
+FS_OBJ_LIB=$(FS_LIB:$(LIB_DIR)/%.c=$(LIB_OBJ_DIR)/%.lo)
+FS_OBJ_SRC=$(FS_SRC:$(SRC_DIR)/%.c=$(SRC_OBJ_DIR)/%.lo)
 FS_OBJ=$(FS_OBJ_SRC) $(FS_OBJ_LIB)
-FS_DEP_LIB=$(FS_LIB:${LIB_DIR}/%.c=${LIB_DEP_DIR}/%.d)
-FS_DEP_SRC=$(FS_SRC:${SRC_DIR}/%.c=${SRC_DEP_DIR}/%.d)
+FS_DEP_LIB=$(FS_LIB:$(LIB_DIR)/%.c=$(LIB_DEP_DIR)/%.d)
+FS_DEP_SRC=$(FS_SRC:$(SRC_DIR)/%.c=$(SRC_DEP_DIR)/%.d)
 FS_DEP=$(FS_DEP_SRC) $(FS_DEP_LIB)
 
 .SUFFIXES: .c .d
@@ -52,13 +67,13 @@ all: library tools
 install: all
 	$(INSTALL) bin/sha1dcsum $(BINDIR)
 	$(INSTALL) bin/sha1dcsum_partialcoll $(BINDIR)
-	$(INSTALL) bin/libdetectcoll.la $(LIBDIR)
+	$(INSTALL) bin/libdetectcoll.$(LIB_EXT) $(LIBDIR)
 
 .PHONY: uninstall
 uninstall:
 	-$(RM) $(BINDIR)/sha1dcsum
 	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
-	-$(RM) $(LIBDIR)/libdetectcoll.la
+	-$(RM) $(LIBDIR)/libdetectcoll.$(LIB_EXT)
 
 .PHONY: clean
 clean:
@@ -90,29 +105,32 @@ sha1dcsum_partialcoll: bin/sha1dcsum_partialcoll
 
 
 .PHONY: library
-library: bin/libdetectcoll.la
+library: bin/libdetectcoll.$(LIB_EXT)
 
 bin/libdetectcoll.la: $(FS_OBJ_LIB)
-	${MKDIR} $(shell dirname $@) && ${LD} ${CFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.la
+	$(MKDIR) $(shell dirname $@) && $(LDLIB) $(LDFLAGS) $(FS_OBJ_LIB) -o bin/libdetectcoll.la
+	
+bin/libdetectcoll.a: $(FS_OBJ_LIB)
+	$(MKDIR) $(shell dirname $@) && $(AR) cru bin/libdetectcoll.a $(FS_OBJ_LIB)
 
 bin/sha1dcsum: $(FS_OBJ_SRC) library
-	${LD} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
+	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
 
 bin/sha1dcsum_partialcoll: bin/sha1dcsum
 	-ln -s sha1dcsum bin/sha1dcsum_partialcoll
 
 
-${SRC_DEP_DIR}/%.d: ${SRC_DIR}/%.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
+$(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
+	$(MKDIR) $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
-${SRC_OBJ_DIR}/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
+$(SRC_OBJ_DIR)/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d
+	$(MKDIR) $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 
-${LIB_DEP_DIR}/%.d: ${LIB_DIR}/%.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
+$(LIB_DEP_DIR)/%.d: $(LIB_DIR)/%.c
+	$(MKDIR) $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
-${LIB_OBJ_DIR}/%.lo ${LIB_OBJ_DIR}/%.o: ${LIB_DIR}/%.c ${LIB_DEP_DIR}/%.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
+$(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d
+	$(MKDIR) $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 -include $(FS_DEP)
