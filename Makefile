@@ -29,7 +29,8 @@ LT_CPPC:=libtool --tag=CXX --mode=compile $(CPPC)
 LT_CPPC_DEP:=$(CPPC)
 LT_LD_CPPC:=libtool --tag=CXX --mode=link $(CPPC)
 
-BOOSTLIBS=/usr/lib/x86_64-linux-gnu/libboost_system.a /usr/lib/x86_64-linux-gnu/libboost_timer.a /usr/lib/x86_64-linux-gnu/libboost_program_options.a /usr/lib/x86_64-linux-gnu/libboost_timer.a /usr/lib/x86_64-linux-gnu/libboost_chrono.a
+BSTDIR=/usr/lib/x86_64-linux-gnu
+BOOSTLIBS=$(BSTDIR)/libboost_system.a $(BSTDIR)/libboost_timer.a $(BSTDIR)/libboost_program_options.a $(BSTDIR)/libboost_timer.a $(BSTDIR)/libboost_chrono.a
 
 MKDIR=mkdir -p
 
