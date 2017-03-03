@@ -19,9 +19,19 @@ LIBDIR=$(PREFIX)/lib
 CFLAGS=-O2 -g -Wall -Werror -Wextra -pedantic -std=c99 -Ilib
 LDFLAGS=-O2 -g
 
-LT_CC:=libtool --tag=CC --mode=compile $(CC)
 LT_CC_DEP:=$(CC)
+UNAME:=$(shell uname)
+
+ifeq ($(UNAME),Darwin)
+LT_CC:=$(CC)
+LT_LD:=ld -dylib
+LDFLAGS=
+LIB_EXT=dylib
+else
+LT_CC:=libtool --tag=CC --mode=compile $(CC)
 LT_LD:=libtool --tag=CC --mode=link $(CC)
+LIB_EXT=lo
+endif
 
 MKDIR=mkdir -p
 
@@ -40,6 +50,7 @@ HAVENEON=0
 ifeq ($(TARGET),rpi2)
 HAVENEON=1
 TARGETCFLAGS=-mfpu=neon
+TARGETLDFLAGS=$(TARGETCFLAGS)
 FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_neon128.c)
 endif
 
@@ -48,6 +59,11 @@ HAVEMMX=1
 HAVESSE=1
 HAVEAVX=1
 TARGETCFLAGS ?= -march=native
+ifeq ($(UNAME),Darwin)
+TARGETLDFLAGS=-dylib -lc
+else
+TARGETLDFLAGS=$(TARGETCFLAGS)
+endif
 endif
 
 ifeq ($(HAVEMMX),1)
@@ -83,7 +99,7 @@ SIMDCONFIG+= -DNO_HAVE_NEON
 endif
 
 CFLAGS+= $(SIMDCONFIG) $(TARGETCFLAGS)
-LDFLAGS+= $(TARGETCFLAGS)
+LDFLAGS+= $(TARGETLDFLAGS)
 
 
 
@@ -115,18 +131,19 @@ all: library tools test
 install: all
 	install bin/sha1dcsum $(BINDIR)
 	install bin/sha1dcsum_partialcoll $(BINDIR)
-	install bin/libdetectcoll.la $(LIBDIR)
+	install bin/libdetectcoll.$(LIB_EXT) $(LIBDIR)
 
 .PHONY: uninstall
 uninstall:
 	-$(RM) $(BINDIR)/sha1dcsum
 	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
-	-$(RM) $(LIBDIR)/libdetectcoll.la
+	-$(RM) $(LIBDIR)/libdetectcoll.$(LIB_EXT)
 
 .PHONY: clean
 clean::
 	-find . -type f -name '*.a' -print -delete
 	-find . -type f -name '*.d' -print -delete
+	-find . -type f -name '*.dylib' -print -delete
 	-find . -type f -name '*.o' -print -delete
 	-find . -type f -name '*.la' -print -delete
 	-find . -type f -name '*.lo' -print -delete
@@ -150,13 +167,13 @@ sha1dcsum_partialcoll: bin/sha1dcsum
 	-ln -s sha1dcsum bin/sha1dcsum_partialcoll
 
 .PHONY: library
-library: bin/libdetectcoll.la
+library: bin/libdetectcoll.$(LIB_EXT)
 
-bin/libdetectcoll.la: $(FS_OBJ_LIB)
-	${MKDIR} $(shell dirname $@) && ${LD} ${CFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.la
+bin/libdetectcoll.$(LIB_EXT): $(FS_OBJ_LIB)
+	${MKDIR} $(shell dirname $@) && ${LD} ${LDFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.$(LIB_EXT)
 
 bin/sha1dcsum: $(FS_OBJ_SRC) library
-	${LD} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
+	${CC} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
 
 
 ${SRC_DEP_DIR}/%.d: ${SRC_DIR}/%.c
@@ -165,9 +182,6 @@ ${SRC_DEP_DIR}/%.d: ${SRC_DIR}/%.c
 ${SRC_OBJ_DIR}/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
-
-${LIB_DEP_DIR}/%.d: ${LIB_DIR}/%.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
 ${LIB_DEP_DIR}/%mmx64.d: ${LIB_DIR}/%mmx64.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(MMXFLAGS) -M -MF $@ $<
@@ -181,10 +195,10 @@ ${LIB_DEP_DIR}/%avx256.d: ${LIB_DIR}/%avx256.c
 ${LIB_DEP_DIR}/%neon128.d: ${LIB_DIR}/%neon128.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(NEONFLAGS) -M -MF $@ $<
 
+${LIB_DEP_DIR}/%.d: ${LIB_DIR}/%.c
+	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
 
-${LIB_OBJ_DIR}/%.lo ${LIB_OBJ_DIR}/%.o: ${LIB_DIR}/%.c ${LIB_DEP_DIR}/%.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 ${LIB_OBJ_DIR}/%mmx64.lo ${LIB_OBJ_DIR}/%mmx64.o: ${LIB_DIR}/%mmx64.c ${LIB_DEP_DIR}/%mmx64.d
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(MMXFLAGS) -o $@ -c $<
@@ -197,6 +211,9 @@ ${LIB_OBJ_DIR}/%avx256.lo ${LIB_OBJ_DIR}/%avx256.o: ${LIB_DIR}/%avx256.c ${LIB_D
 
 ${LIB_OBJ_DIR}/%neon128.lo ${LIB_OBJ_DIR}/%neon128.o: ${LIB_DIR}/%neon128.c ${LIB_DEP_DIR}/%neon128.d
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(NEONFLAGS) -o $@ -c $<
+
+${LIB_OBJ_DIR}/%.lo ${LIB_OBJ_DIR}/%.o: ${LIB_DIR}/%.c ${LIB_DEP_DIR}/%.d
+	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 
 -include $(FS_DEP)
