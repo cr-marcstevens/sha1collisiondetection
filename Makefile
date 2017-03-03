@@ -72,8 +72,8 @@ install: all
 .PHONY: uninstall
 uninstall:
 	-$(RM) $(BINDIR)/sha1dcsum
-#	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
 	-$(RM) $(LIBDIR)/libdetectcoll.$(LIB_EXT)
+#	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
 
 .PHONY: clean
 clean:
@@ -114,10 +114,10 @@ bin/libdetectcoll.a: $(FS_OBJ_LIB)
 	$(MKDIR) $(shell dirname $@) && $(AR) cru bin/libdetectcoll.a $(FS_OBJ_LIB)
 
 bin/sha1dcsum: $(FS_OBJ_SRC) bin/libdetectcoll.$(LIB_EXT)
-	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
+	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -ldetectcoll -o bin/sha1dcsum
 
-bin/sha1dcsum_partialcoll: bin/sha1dcsum
-	-ln -s sha1dcsum bin/sha1dcsum_partialcoll
+bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libdetectcoll.$(LIB_EXT)
+	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -ldetectcoll -o bin/sha1dcsum_partialcoll
 
 
 $(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
