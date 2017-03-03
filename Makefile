@@ -6,8 +6,8 @@
 ##
 
 PREFIX ?= /usr/local
-BINDIR=$(PREFIX)/bin/
-LIBDIR=$(PREFIX)/lib/
+BINDIR=$(PREFIX)/bin
+LIBDIR=$(PREFIX)/lib
 
 CC ?= gcc
 LD ?= gcc
@@ -65,14 +65,14 @@ all: library tools
 
 .PHONY: install
 install: all
-	$(INSTALL) bin/sha1dcsum $(BINDIR)
-	$(INSTALL) bin/sha1dcsum_partialcoll $(BINDIR)
 	$(INSTALL) bin/libdetectcoll.$(LIB_EXT) $(LIBDIR)
+	$(INSTALL) bin/sha1dcsum $(BINDIR)
+#	$(INSTALL) bin/sha1dcsum_partialcoll $(BINDIR)
 
 .PHONY: uninstall
 uninstall:
 	-$(RM) $(BINDIR)/sha1dcsum
-	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
+#	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
 	-$(RM) $(LIBDIR)/libdetectcoll.$(LIB_EXT)
 
 .PHONY: clean
@@ -108,12 +108,12 @@ sha1dcsum_partialcoll: bin/sha1dcsum_partialcoll
 library: bin/libdetectcoll.$(LIB_EXT)
 
 bin/libdetectcoll.la: $(FS_OBJ_LIB)
-	$(MKDIR) $(shell dirname $@) && $(LDLIB) $(LDFLAGS) $(FS_OBJ_LIB) -o bin/libdetectcoll.la
+	$(MKDIR) $(shell dirname $@) && $(LDLIB) $(LDFLAGS) $(FS_OBJ_LIB) -rpath $(LIBDIR) -o bin/libdetectcoll.la
 	
 bin/libdetectcoll.a: $(FS_OBJ_LIB)
 	$(MKDIR) $(shell dirname $@) && $(AR) cru bin/libdetectcoll.a $(FS_OBJ_LIB)
 
-bin/sha1dcsum: $(FS_OBJ_SRC) library
+bin/sha1dcsum: $(FS_OBJ_SRC) bin/libdetectcoll.$(LIB_EXT)
 	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
 
 bin/sha1dcsum_partialcoll: bin/sha1dcsum
