@@ -5,9 +5,20 @@
 ## https://opensource.org/licenses/MIT
 ##
 
+# dynamic library compatibility
+# 1. If the library source code has changed at all since the last update,
+#    then increment revision (‘c:r:a’ becomes ‘c:r+1:a’).
+# 2. If any interfaces have been added, removed, or changed since the last update,
+#    increment current, and set revision to 0.
+# 3. If any interfaces have been added since the last public release, then increment age.
+# 4. If any interfaces have been removed or changed since the last public release,
+#    then set age to 0.
+LIBCOMPAT=0:0:0
+
 PREFIX ?= /usr/local
 BINDIR=$(PREFIX)/bin
 LIBDIR=$(PREFIX)/lib
+INCLUDEDIR=$(PREFIX)/include/sha1dc
 
 CC ?= gcc
 LD ?= gcc
@@ -65,15 +76,17 @@ all: library tools
 
 .PHONY: install
 install: all
-	$(INSTALL) bin/libdetectcoll.$(LIB_EXT) $(LIBDIR)
-	$(INSTALL) bin/sha1dcsum $(BINDIR)
-#	$(INSTALL) bin/sha1dcsum_partialcoll $(BINDIR)
+	$(INSTALL) -D bin/libsha1detectcoll.$(LIB_EXT) $(LIBDIR)/libsha1detectcoll.$(LIB_EXT)
+	$(INSTALL) -D lib/sha1.h $(INCLUDEDIR)/sha1.h
+	$(INSTALL) -D bin/sha1dcsum $(BINDIR)/sha1dcsum
+	$(INSTALL) -D bin/sha1dcsum_partialcoll $(BINDIR)/sha1dcsum_partialcoll
 
 .PHONY: uninstall
 uninstall:
 	-$(RM) $(BINDIR)/sha1dcsum
-	-$(RM) $(LIBDIR)/libdetectcoll.$(LIB_EXT)
-#	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
+	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
+	-$(RM) $(INCLUDEDIR)/sha1.h
+	-$(RM) $(LIBDIR)/libsha1detectcoll.$(LIB_EXT)
 
 .PHONY: clean
 clean:
@@ -105,19 +118,19 @@ sha1dcsum_partialcoll: bin/sha1dcsum_partialcoll
 
 
 .PHONY: library
-library: bin/libdetectcoll.$(LIB_EXT)
+library: bin/libsha1detectcoll.$(LIB_EXT)
 
-bin/libdetectcoll.la: $(FS_OBJ_LIB)
-	$(MKDIR) $(shell dirname $@) && $(LDLIB) $(LDFLAGS) $(FS_OBJ_LIB) -rpath $(LIBDIR) -o bin/libdetectcoll.la
+bin/libsha1detectcoll.la: $(FS_OBJ_LIB)
+	$(MKDIR) $(shell dirname $@) && $(LDLIB) $(LDFLAGS) $(FS_OBJ_LIB) -rpath $(LIBDIR) -version-info $(LIBCOMPAT) -o bin/libsha1detectcoll.la
 	
-bin/libdetectcoll.a: $(FS_OBJ_LIB)
-	$(MKDIR) $(shell dirname $@) && $(AR) cru bin/libdetectcoll.a $(FS_OBJ_LIB)
+bin/libsha1detectcoll.a: $(FS_OBJ_LIB)
+	$(MKDIR) $(shell dirname $@) && $(AR) cru bin/libsha1detectcoll.a $(FS_OBJ_LIB)
 
-bin/sha1dcsum: $(FS_OBJ_SRC) bin/libdetectcoll.$(LIB_EXT)
-	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -ldetectcoll -o bin/sha1dcsum
+bin/sha1dcsum: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
+	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum
 
-bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libdetectcoll.$(LIB_EXT)
-	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -ldetectcoll -o bin/sha1dcsum_partialcoll
+bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
+	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum_partialcoll
 
 
 $(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
