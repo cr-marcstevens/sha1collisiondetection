@@ -20,7 +20,7 @@ void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80]);
 
 // same as sha1_compression_W, but additionally store intermediate states
 // only stores states ii (the state between step ii-1 and step ii) when DOSTORESTATEii is defined in ubc_check.h
-void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t states[80][5]);
+void sha1_compression_states(uint32_t ihv[5], uint32_t W[80], uint32_t states[80][5]);
 
 // function type for sha1_recompression_step_T (uint32_t ihvin[5], uint32_t ihvout[5], const uint32_t me2[80], const uint32_t state[5])
 // where 0 <= T < 80

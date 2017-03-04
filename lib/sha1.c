@@ -15,6 +15,15 @@
 #define rotate_right(x,n) (((x)>>(n))|((x)<<(32-(n))))
 #define rotate_left(x,n)  (((x)<<(n))|((x)>>(32-(n))))
 
+#define sha1_bswap32(m)	(((((uint8_t*)(m))[0]) << 24) | \
+                         ((((uint8_t*)(m))[1]) << 16) | \
+                         ((((uint8_t*)(m))[2]) << 8) | \
+                          (((uint8_t*)(m))[3]) )
+
+#define sha1_mix(W, t)  (rotate_left(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1))
+
+#define sha1_store(W, t, x)	*(volatile uint32_t *)&W[t] = x
+
 #define sha1_f1(b,c,d) ((d)^((b)&((c)^(d))))
 #define sha1_f2(b,c,d) ((b)^(c)^(d))
 #define sha1_f3(b,c,d) (((b) & ((c)|(d))) | ((c)&(d)))
@@ -38,6 +47,22 @@
 #define HASHCLASH_SHA1COMPRESS_ROUND4_STEP_BW(a, b, c, d, e, m, t) \
 	{ b = rotate_right(b, 30); e -= rotate_left(a, 5) + sha1_f4(b,c,d) + 0xCA62C1D6 + m[t]; }
 
+#define SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(a, b, c, d, e, m, W, t, temp) \
+	{temp = sha1_bswap32(m+t); e += rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999 + temp; sha1_store(W, t, temp); b = rotate_left(b, 30);}
+
+#define SHA1COMPRESS_FULL_ROUND1_STEP_EXPAND(a, b, c, d, e, W, t, temp) \
+        {temp = sha1_mix(W, t); e += rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999 + temp; sha1_store(W, t, temp); b = rotate_left(b, 30); }
+
+#define SHA1COMPRESS_FULL_ROUND2_STEP(a, b, c, d, e, W, t, temp) \
+	{temp = sha1_mix(W, t); e += rotate_left(a, 5) + sha1_f2(b,c,d) + 0x6ED9EBA1 + temp; sha1_store(W, t, temp); b = rotate_left(b, 30); }
+
+#define SHA1COMPRESS_FULL_ROUND3_STEP(a, b, c, d, e, W, t, temp) \
+	{temp = sha1_mix(W, t); e += rotate_left(a, 5) + sha1_f3(b,c,d) + 0x8F1BBCDC + temp; sha1_store(W, t, temp); b = rotate_left(b, 30); }
+
+#define SHA1COMPRESS_FULL_ROUND4_STEP(a, b, c, d, e, W, t, temp) \
+	{temp = sha1_mix(W, t); e += rotate_left(a, 5) + sha1_f4(b,c,d) + 0xCA62C1D6 + temp; sha1_store(W, t, temp); b = rotate_left(b, 30); }
+
+
 #define SHA1_STORE_STATE(i) states[i][0] = a; states[i][1] = b; states[i][2] = c; states[i][3] = d; states[i][4] = e;
 
 
@@ -46,7 +71,7 @@ void sha1_message_expansion(uint32_t W[80])
 {
 	unsigned i;
 	for (i = 16; i < 80; ++i)
-		W[i] = rotate_left(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
+		W[i] = sha1_mix(W, i);
 }
 
 void sha1_compression(uint32_t ihv[5], const uint32_t m[16])
@@ -57,7 +82,7 @@ void sha1_compression(uint32_t ihv[5], const uint32_t m[16])
 
 	memcpy(W, m, 16 * 4);
 	for (i = 16; i < 80; ++i)
-		W[i] = rotate_left(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
+		W[i] = sha1_mix(W, i);
 
 	a = ihv[0]; b = ihv[1]; c = ihv[2]; d = ihv[3]; e = ihv[4];
 
@@ -243,9 +268,10 @@ void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80])
 
 
 
-void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t states[80][5])
+void sha1_compression_states(uint32_t ihv[5], uint32_t W[80], uint32_t states[80][5])
 {
 	uint32_t a = ihv[0], b = ihv[1], c = ihv[2], d = ihv[3], e = ihv[4];
+	//uint32_t temp;
 
 #ifdef DOSTORESTATE00
 	SHA1_STORE_STATE(0)
@@ -949,11 +975,13 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	ctx->ihv1[4] = ctx->ihv[4];
 	memcpy(ctx->m1, block, 64);
 	sha1_message_expansion(ctx->m1);
-	if (ctx->detect_coll && ctx->ubc_check)
-	{
-		ubc_check(ctx->m1, ubc_dv_mask);
-	}
+
 	sha1_compression_states(ctx->ihv, ctx->m1, ctx->states);
+
+        if (ctx->detect_coll && ctx->ubc_check)
+        {
+                ubc_check(ctx->m1, ubc_dv_mask);
+        }
 	if (ctx->detect_coll)
 	{
 		for (i = 0; sha1_dvs[i].dvType != 0; ++i)
@@ -994,8 +1022,7 @@ void swap_bytes(uint32_t val[16])
 	unsigned i;
 	for (i = 0; i < 16; ++i)
 	{
-		val[i] = ((val[i] << 8) & 0xFF00FF00) | ((val[i] >> 8) & 0xFF00FF);
-		val[i] = (val[i] << 16) | (val[i] >> 16);
+		val[i] = sha1_bswap32(val + i);
 	}
 }
 
