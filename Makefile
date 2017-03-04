@@ -23,8 +23,14 @@ INCLUDEDIR=$(PREFIX)/include/sha1dc
 CC ?= gcc
 LD ?= gcc
 CC_DEP ?= $(CC)
+
+ifeq ($(shell uname),Darwin)
+LIBTOOL ?= glibtool
+INSTALL ?= ginstall
+else
 LIBTOOL ?= libtool
 INSTALL ?= install
+endif
 
 
 CFLAGS=-O2 -Wall -Werror -Wextra -pedantic -std=c90 -Ilib
@@ -38,15 +44,15 @@ LT_INSTALL:=$(LIBTOOL) --tag=CC --mode=install $(INSTALL)
 MKDIR=mkdir -p
 
 ifneq (, $(shell which $(LIBTOOL) 2>/dev/null ))
-CC=$(LT_CC)
-CC_DEP=$(LT_CC_DEP)
-LD=$(LT_LD)
-LDLIB=$(LT_LD)
-INSTALL=$(LT_INSTALL)
-LIB_EXT=la
+CC:=$(LT_CC)
+CC_DEP:=$(LT_CC_DEP)
+LD:=$(LT_LD)
+LDLIB:=$(LT_LD)
+LIB_EXT:=la
 else
-LIB_EXT=a
-LD=$(CC)
+LIB_EXT:=a
+LD:=$(CC)
+LT_INSTALL:=$(INSTALL)
 endif
 
 CFLAGS+=$(TARGETCFLAGS)
@@ -76,10 +82,11 @@ all: library tools
 
 .PHONY: install
 install: all
-	$(INSTALL) -D bin/libsha1detectcoll.$(LIB_EXT) $(LIBDIR)/libsha1detectcoll.$(LIB_EXT)
-	$(INSTALL) -D lib/sha1.h $(INCLUDEDIR)/sha1.h
-	$(INSTALL) -D bin/sha1dcsum $(BINDIR)/sha1dcsum
-	$(INSTALL) -D bin/sha1dcsum_partialcoll $(BINDIR)/sha1dcsum_partialcoll
+	$(LT_INSTALL) -d $(LIBDIR) $(BINDIR) $(INCLUDEDIR)
+	$(LT_INSTALL) bin/libsha1detectcoll.$(LIB_EXT) $(LIBDIR)/libsha1detectcoll.$(LIB_EXT)
+	$(LT_INSTALL) lib/sha1.h $(INCLUDEDIR)/sha1.h
+	$(LT_INSTALL) bin/sha1dcsum $(BINDIR)/sha1dcsum
+	$(LT_INSTALL) bin/sha1dcsum_partialcoll $(BINDIR)/sha1dcsum_partialcoll
 
 .PHONY: uninstall
 uninstall:
