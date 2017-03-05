@@ -26,7 +26,7 @@ CC_DEP ?= $(CC)
 
 ifeq ($(shell uname),Darwin)
 LIBTOOL ?= glibtool
-INSTALL ?= ginstall
+INSTALL ?= install
 else
 LIBTOOL ?= libtool
 INSTALL ?= install
