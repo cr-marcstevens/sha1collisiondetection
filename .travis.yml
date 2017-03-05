@@ -1,7 +1,3 @@
-sudo: required
-
-dist: trusty
-
 language: c
 
 os:
@@ -14,7 +10,7 @@ compiler:
 
 env:
   matrix:
-  - LIBTOOL=libtool
+  - LIBTOOL=
   - LIBTOOL=libtool-disabled
 
 matrix:

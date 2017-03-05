@@ -8,6 +8,7 @@
 #include <string.h>
 #include <memory.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "sha1.h"
 #include "ubc_check.h"
@@ -42,13 +43,14 @@
 
 
 
-void sha1_message_expansion(uint32_t W[80])
+static void sha1_message_expansion(uint32_t W[80])
 {
 	unsigned i;
 	for (i = 16; i < 80; ++i)
 		W[i] = rotate_left(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
 }
 
+/*
 void sha1_compression(uint32_t ihv[5], const uint32_t m[16])
 {
 	uint32_t W[80];
@@ -147,10 +149,9 @@ void sha1_compression(uint32_t ihv[5], const uint32_t m[16])
 
 	ihv[0] += a; ihv[1] += b; ihv[2] += c; ihv[3] += d; ihv[4] += e;
 }
+*/
 
-
-
-void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80])
+static void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80])
 {
 	uint32_t a = ihv[0], b = ihv[1], c = ihv[2], d = ihv[3], e = ihv[4];
 
@@ -242,8 +243,7 @@ void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80])
 }
 
 
-
-void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t states[80][5])
+static void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t states[80][5])
 {
 	uint32_t a = ihv[0], b = ihv[1], c = ihv[2], d = ihv[3], e = ihv[4];
 
@@ -663,7 +663,7 @@ void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t sta
 
 
 #define SHA1_RECOMPRESS(t) \
-void sha1recompress_fast_ ## t (uint32_t ihvin[5], uint32_t ihvout[5], const uint32_t me2[80], const uint32_t state[5]) \
+static void sha1recompress_fast_ ## t (uint32_t ihvin[5], uint32_t ihvout[5], const uint32_t me2[80], const uint32_t state[5]) \
 { \
 	uint32_t a = state[0], b = state[1], c = state[2], d = state[3], e = state[4]; \
 	if (t > 79) HASHCLASH_SHA1COMPRESS_ROUND4_STEP_BW(b, c, d, e, a, me2, 79); \
@@ -831,6 +831,7 @@ void sha1recompress_fast_ ## t (uint32_t ihvin[5], uint32_t ihvout[5], const uin
 	ihvout[0] = ihvin[0] + a; ihvout[1] = ihvin[1] + b; ihvout[2] = ihvin[2] + c; ihvout[3] = ihvin[3] + d; ihvout[4] = ihvin[4] + e; \
 }
 
+/*
 SHA1_RECOMPRESS(0)
 SHA1_RECOMPRESS(1)
 SHA1_RECOMPRESS(2)
@@ -894,7 +895,9 @@ SHA1_RECOMPRESS(54)
 SHA1_RECOMPRESS(55)
 SHA1_RECOMPRESS(56)
 SHA1_RECOMPRESS(57)
+*/
 SHA1_RECOMPRESS(58)
+/*
 SHA1_RECOMPRESS(59)
 
 SHA1_RECOMPRESS(60)
@@ -902,7 +905,9 @@ SHA1_RECOMPRESS(61)
 SHA1_RECOMPRESS(62)
 SHA1_RECOMPRESS(63)
 SHA1_RECOMPRESS(64)
+*/
 SHA1_RECOMPRESS(65)
+/*
 SHA1_RECOMPRESS(66)
 SHA1_RECOMPRESS(67)
 SHA1_RECOMPRESS(68)
@@ -918,7 +923,9 @@ SHA1_RECOMPRESS(76)
 SHA1_RECOMPRESS(77)
 SHA1_RECOMPRESS(78)
 SHA1_RECOMPRESS(79)
+*/
 
+/*
 sha1_recompression_type sha1_recompression_step[80] =
 {
 	sha1recompress_fast_0, sha1recompress_fast_1, sha1recompress_fast_2, sha1recompress_fast_3, sha1recompress_fast_4, sha1recompress_fast_5, sha1recompress_fast_6, sha1recompress_fast_7, sha1recompress_fast_8, sha1recompress_fast_9,
@@ -930,7 +937,7 @@ sha1_recompression_type sha1_recompression_step[80] =
 	sha1recompress_fast_60, sha1recompress_fast_61, sha1recompress_fast_62, sha1recompress_fast_63, sha1recompress_fast_64, sha1recompress_fast_65, sha1recompress_fast_66, sha1recompress_fast_67, sha1recompress_fast_68, sha1recompress_fast_69,
 	sha1recompress_fast_70, sha1recompress_fast_71, sha1recompress_fast_72, sha1recompress_fast_73, sha1recompress_fast_74, sha1recompress_fast_75, sha1recompress_fast_76, sha1recompress_fast_77, sha1recompress_fast_78, sha1recompress_fast_79,
 };
-
+*/
 
 
 
@@ -962,13 +969,25 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 			{
 				for (j = 0; j < 80; ++j)
 					ctx->m2[j] = ctx->m1[j] ^ sha1_dvs[i].dm[j];
-				(sha1_recompression_step[sha1_dvs[i].testt])(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
-				// to verify SHA-1 collision detection code with collisions for reduced-step SHA-1
-				if ((ihvtmp[0] == ctx->ihv[0] && ihvtmp[1] == ctx->ihv[1] && ihvtmp[2] == ctx->ihv[2] && ihvtmp[3] == ctx->ihv[3] && ihvtmp[4] == ctx->ihv[4])
-					|| (ctx->reduced_round_coll && ctx->ihv1[0] == ctx->ihv2[0] && ctx->ihv1[1] == ctx->ihv2[1] && ctx->ihv1[2] == ctx->ihv2[2] && ctx->ihv1[3] == ctx->ihv2[3] && ctx->ihv1[4] == ctx->ihv2[4]))
+
+				/* (sha1_recompression_step[sha1_dvs[i].testt])(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]); */
+				switch (sha1_dvs[i].testt)
+				{
+				case 58:
+					sha1recompress_fast_58(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
+					break;
+				case 65:
+					sha1recompress_fast_65(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
+					break;
+				default:
+					abort();
+				}
+				/* to verify SHA-1 collision detection code with collisions for reduced-step SHA-1 */
+				if ((0 == ((ihvtmp[0] ^ ctx->ihv[0]) | (ihvtmp[1] ^ ctx->ihv[1]) | (ihvtmp[2] ^ ctx->ihv[2]) | (ihvtmp[3] ^ ctx->ihv[3]) | (ihvtmp[4] ^ ctx->ihv[4])))
+					|| (ctx->reduced_round_coll && 0==((ctx->ihv1[0] ^ ctx->ihv2[0]) | (ctx->ihv1[1] ^ ctx->ihv2[1]) | (ctx->ihv1[2] ^ ctx->ihv2[2]) | (ctx->ihv1[3] ^ ctx->ihv2[3]) | (ctx->ihv1[4] ^ ctx->ihv2[4]))))
 				{
 					ctx->found_collision = 1;
-					// TODO: call callback
+
 					if (ctx->callback != NULL)
 						ctx->callback(ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2);
 
@@ -1056,7 +1075,7 @@ void SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback)
 	ctx->callback = callback;
 }
 
-void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len)
+void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 {
 	unsigned left, fill;
 	if (len == 0)

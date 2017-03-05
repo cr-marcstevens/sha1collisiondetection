@@ -5,88 +5,58 @@
 ## https://opensource.org/licenses/MIT
 ##
 
-ARCH=$(shell arch)
-ifeq ($(ARCH),armv7l)
-TARGET ?= rpi2
-endif
-TARGET ?= x86
-CC ?= gcc
+# dynamic library compatibility
+# 1. If the library source code has changed at all since the last update,
+#    then increment revision (‘c:r:a’ becomes ‘c:r+1:a’).
+# 2. If any interfaces have been added, removed, or changed since the last update,
+#    increment current, and set revision to 0.
+# 3. If any interfaces have been added since the last public release, then increment age.
+# 4. If any interfaces have been removed or changed since the last public release,
+#    then set age to 0.
+LIBCOMPAT=0:0:0
 
 PREFIX ?= /usr/local
 BINDIR=$(PREFIX)/bin
 LIBDIR=$(PREFIX)/lib
+INCLUDEDIR=$(PREFIX)/include/sha1dc
 
-CFLAGS=-O2 -g -Wall -Werror -Wextra -pedantic -std=c99 -Ilib
-LDFLAGS=-O2 -g
+CC ?= gcc
+LD ?= gcc
+CC_DEP ?= $(CC)
 
-LT_CC:=libtool --tag=CC --mode=compile $(CC)
+ifeq ($(shell uname),Darwin)
+LIBTOOL ?= glibtool
+INSTALL ?= install
+else
+LIBTOOL ?= libtool
+INSTALL ?= install
+endif
+
+
+CFLAGS=-O2 -Wall -Werror -Wextra -pedantic -std=c90 -Ilib
+LDFLAGS=
+
+LT_CC:=$(LIBTOOL) --tag=CC --mode=compile $(CC)
 LT_CC_DEP:=$(CC)
-LT_LD:=libtool --tag=CC --mode=link $(CC)
+LT_LD:=$(LIBTOOL) --tag=CC --mode=link $(CC)
+LT_INSTALL:=$(LIBTOOL) --tag=CC --mode=install $(INSTALL)
 
 MKDIR=mkdir -p
 
-CC=${LT_CC}
-CC_DEP=${LT_CC_DEP}
-LD=${LT_LD}
-
-
-
-
-HAVEMMX=0
-HAVESSE=0
-HAVEAVX=0
-HAVENEON=0
-
-ifeq ($(TARGET),rpi2)
-HAVENEON=1
-TARGETCFLAGS=-mfpu=neon
-FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_neon128.c)
-endif
-
-ifeq ($(TARGET),x86)
-HAVEMMX=1
-HAVESSE=1
-HAVEAVX=1
-TARGETCFLAGS ?= -march=native
-endif
-
-ifeq ($(HAVEMMX),1)
-MMXFLAGS=-mmmx
-SIMDCONFIG+= -DHAVE_MMX
-FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_mmx64.c)
+ifneq (, $(shell which $(LIBTOOL) 2>/dev/null ))
+CC:=$(LT_CC)
+CC_DEP:=$(LT_CC_DEP)
+LD:=$(LT_LD)
+LDLIB:=$(LT_LD)
+LIB_EXT:=la
 else
-SIMDCONFIG+= -DNO_HAVE_MMX
+LIB_EXT:=a
+LD:=$(CC)
+LT_INSTALL:=$(INSTALL)
 endif
 
-ifeq ($(HAVESSE),1)
-SSEFLAGS=-msse -msse2
-SIMDCONFIG+= -DHAVE_SSE
-FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_sse128.c)
-else
-SIMDCONFIG+= -DNO_HAVE_SSE
-endif
-
-ifeq ($(HAVEAVX),1)
-AVXFLAGS=-mavx -mavx2
-SIMDCONFIG+= -DHAVE_AVX
-FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_avx256.c)
-else
-SIMDCONFIG+= -DNO_HAVE_AVX
-endif
-
-ifeq ($(HAVENEON),1)
-NEONFLAGS=-mfpu=neon
-SIMDCONFIG+= -DHAVE_NEON
-FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_neon128.c)
-else
-SIMDCONFIG+= -DNO_HAVE_NEON
-endif
-
-CFLAGS+= $(SIMDCONFIG) $(TARGETCFLAGS)
-LDFLAGS+= $(TARGETCFLAGS)
-
-
-
+CFLAGS+=$(TARGETCFLAGS)
+LDFLAGS+=$(TARGETLDFLAGS)
 
 
 LIB_DIR=lib
@@ -96,35 +66,37 @@ SRC_DIR=src
 SRC_DEP_DIR=dep_src
 SRC_OBJ_DIR=obj_src
 
-FS_LIB=$(filter-out $(wildcard ${LIB_DIR}/*_simd_*.c),$(wildcard ${LIB_DIR}/*.c))
-FS_LIB+=$(FS_LIB_SIMD)
-FS_SRC=$(wildcard ${SRC_DIR}/*.c)
-FS_OBJ_LIB=$(FS_LIB:${LIB_DIR}/%.c=${LIB_OBJ_DIR}/%.lo)
-FS_OBJ_SRC=$(FS_SRC:${SRC_DIR}/%.c=${SRC_OBJ_DIR}/%.lo)
+FS_LIB=$(wildcard $(LIB_DIR)/*.c)
+FS_SRC=$(wildcard $(SRC_DIR)/*.c)
+FS_OBJ_LIB=$(FS_LIB:$(LIB_DIR)/%.c=$(LIB_OBJ_DIR)/%.lo)
+FS_OBJ_SRC=$(FS_SRC:$(SRC_DIR)/%.c=$(SRC_OBJ_DIR)/%.lo)
 FS_OBJ=$(FS_OBJ_SRC) $(FS_OBJ_LIB)
-FS_DEP_LIB=$(FS_LIB:${LIB_DIR}/%.c=${LIB_DEP_DIR}/%.d)
-FS_DEP_SRC=$(FS_SRC:${SRC_DIR}/%.c=${SRC_DEP_DIR}/%.d)
+FS_DEP_LIB=$(FS_LIB:$(LIB_DIR)/%.c=$(LIB_DEP_DIR)/%.d)
+FS_DEP_SRC=$(FS_SRC:$(SRC_DIR)/%.c=$(SRC_DEP_DIR)/%.d)
 FS_DEP=$(FS_DEP_SRC) $(FS_DEP_LIB)
 
 .SUFFIXES: .c .d
 
 .PHONY: all
-all: library tools test
+all: library tools
 
 .PHONY: install
 install: all
-	install bin/sha1dcsum $(BINDIR)
-	install bin/sha1dcsum_partialcoll $(BINDIR)
-	install bin/libdetectcoll.la $(LIBDIR)
+	$(LT_INSTALL) -d $(LIBDIR) $(BINDIR) $(INCLUDEDIR)
+	$(LT_INSTALL) bin/libsha1detectcoll.$(LIB_EXT) $(LIBDIR)/libsha1detectcoll.$(LIB_EXT)
+	$(LT_INSTALL) lib/sha1.h $(INCLUDEDIR)/sha1.h
+	$(LT_INSTALL) bin/sha1dcsum $(BINDIR)/sha1dcsum
+	$(LT_INSTALL) bin/sha1dcsum_partialcoll $(BINDIR)/sha1dcsum_partialcoll
 
 .PHONY: uninstall
 uninstall:
 	-$(RM) $(BINDIR)/sha1dcsum
 	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
-	-$(RM) $(LIBDIR)/libdetectcoll.la
+	-$(RM) $(INCLUDEDIR)/sha1.h
+	-$(RM) $(LIBDIR)/libsha1detectcoll.$(LIB_EXT)
 
 .PHONY: clean
-clean::
+clean:
 	-find . -type f -name '*.a' -print -delete
 	-find . -type f -name '*.d' -print -delete
 	-find . -type f -name '*.o' -print -delete
@@ -138,6 +110,9 @@ clean::
 test: tools
 	bin/sha1dcsum test/*
 	bin/sha1dcsum_partialcoll test/*
+	
+.PHONY: check
+check: test
 
 .PHONY: tools
 tools: sha1dcsum sha1dcsum_partialcoll
@@ -146,57 +121,36 @@ tools: sha1dcsum sha1dcsum_partialcoll
 sha1dcsum: bin/sha1dcsum
 
 .PHONY: sha1dcsum_partialcoll
-sha1dcsum_partialcoll: bin/sha1dcsum
-	-ln -s sha1dcsum bin/sha1dcsum_partialcoll
+sha1dcsum_partialcoll: bin/sha1dcsum_partialcoll
+
 
 .PHONY: library
-library: bin/libdetectcoll.la
+library: bin/libsha1detectcoll.$(LIB_EXT)
 
-bin/libdetectcoll.la: $(FS_OBJ_LIB)
-	${MKDIR} $(shell dirname $@) && ${LD} ${CFLAGS} $(FS_OBJ_LIB) -o bin/libdetectcoll.la
+bin/libsha1detectcoll.la: $(FS_OBJ_LIB)
+	$(MKDIR) $(shell dirname $@) && $(LDLIB) $(LDFLAGS) $(FS_OBJ_LIB) -rpath $(LIBDIR) -version-info $(LIBCOMPAT) -o bin/libsha1detectcoll.la
+	
+bin/libsha1detectcoll.a: $(FS_OBJ_LIB)
+	$(MKDIR) $(shell dirname $@) && $(AR) cru bin/libsha1detectcoll.a $(FS_OBJ_LIB)
 
-bin/sha1dcsum: $(FS_OBJ_SRC) library
-	${LD} ${CFLAGS} $(FS_OBJ_SRC) $(FS_OBJ_LIB) -Lbin -ldetectcoll -o bin/sha1dcsum
+bin/sha1dcsum: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
+	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum
 
-
-${SRC_DEP_DIR}/%.d: ${SRC_DIR}/%.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
-
-${SRC_OBJ_DIR}/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
-
-
-${LIB_DEP_DIR}/%.d: ${LIB_DIR}/%.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
-
-${LIB_DEP_DIR}/%mmx64.d: ${LIB_DIR}/%mmx64.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(MMXFLAGS) -M -MF $@ $<
-
-${LIB_DEP_DIR}/%sse128.d: ${LIB_DIR}/%sse128.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(SSEFLAGS) -M -MF $@ $<
-
-${LIB_DEP_DIR}/%avx256.d: ${LIB_DIR}/%avx256.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(AVXFLAGS) -M -MF $@ $<
-
-${LIB_DEP_DIR}/%neon128.d: ${LIB_DIR}/%neon128.c
-	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(NEONFLAGS) -M -MF $@ $<
+bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
+	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum_partialcoll
 
 
+$(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
+	$(MKDIR) $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
-${LIB_OBJ_DIR}/%.lo ${LIB_OBJ_DIR}/%.o: ${LIB_DIR}/%.c ${LIB_DEP_DIR}/%.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
+$(SRC_OBJ_DIR)/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d
+	$(MKDIR) $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
-${LIB_OBJ_DIR}/%mmx64.lo ${LIB_OBJ_DIR}/%mmx64.o: ${LIB_DIR}/%mmx64.c ${LIB_DEP_DIR}/%mmx64.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(MMXFLAGS) -o $@ -c $<
 
-${LIB_OBJ_DIR}/%sse128.lo ${LIB_OBJ_DIR}/%sse128.o: ${LIB_DIR}/%sse128.c ${LIB_DEP_DIR}/%sse128.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(SSEFLAGS) -o $@ -c $<
+$(LIB_DEP_DIR)/%.d: $(LIB_DIR)/%.c
+	$(MKDIR) $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
-${LIB_OBJ_DIR}/%avx256.lo ${LIB_OBJ_DIR}/%avx256.o: ${LIB_DIR}/%avx256.c ${LIB_DEP_DIR}/%avx256.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(AVXFLAGS) -o $@ -c $<
-
-${LIB_OBJ_DIR}/%neon128.lo ${LIB_OBJ_DIR}/%neon128.o: ${LIB_DIR}/%neon128.c ${LIB_DEP_DIR}/%neon128.d
-	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(NEONFLAGS) -o $@ -c $<
-
+$(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d
+	$(MKDIR) $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 -include $(FS_DEP)
