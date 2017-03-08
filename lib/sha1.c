@@ -15,18 +15,22 @@
 #define rotate_right(x,n) (((x)>>(n))|((x)<<(32-(n))))
 #define rotate_left(x,n)  (((x)<<(n))|((x)>>(32-(n))))
 
-#define sha1_bswap32(m)	(((((uint8_t*)(m))[0]) << 24) | \
-                         ((((uint8_t*)(m))[1]) << 16) | \
-                         ((((uint8_t*)(m))[2]) << 8) | \
-                          (((uint8_t*)(m))[3]) )
+#define sha1_bswap32(x) \
+	{x = ((x << 8) & 0xFF00FF00) | ((x >> 8) & 0xFF00FF); x = (x << 16) | (x >> 16);}
 
 #define sha1_mix(W, t)  (rotate_left(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1))
+
+#if defined(BIGENDIAN)
+	#define sha1_load(m, t) (m[t])
+#else
+	#define sha1_load(m, t, temp)	{ temp = m[t]; sha1_bswap32(temp); }
+#endif /*define(BIGENDIAN)*/
 
 #define sha1_store(W, t, x)	*(volatile uint32_t *)&W[t] = x
 
 #define sha1_f1(b,c,d) ((d)^((b)&((c)^(d))))
 #define sha1_f2(b,c,d) ((b)^(c)^(d))
-#define sha1_f3(b,c,d) (((b) & ((c)|(d))) | ((c)&(d)))
+#define sha1_f3(b,c,d) (((b)&(c))+((d)&((b)^(c))))
 #define sha1_f4(b,c,d) ((b)^(c)^(d))
 
 #define HASHCLASH_SHA1COMPRESS_ROUND1_STEP(a, b, c, d, e, m, t) \
@@ -48,31 +52,22 @@
 	{ b = rotate_right(b, 30); e -= rotate_left(a, 5) + sha1_f4(b,c,d) + 0xCA62C1D6 + m[t]; }
 
 #define SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(a, b, c, d, e, m, W, t, temp) \
-	{temp = sha1_bswap32(m+t); e += rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999 + temp; sha1_store(W, t, temp); b = rotate_left(b, 30);}
+	{sha1_load(m, t, temp); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999; b = rotate_right(b, 2);}
 
 #define SHA1COMPRESS_FULL_ROUND1_STEP_EXPAND(a, b, c, d, e, W, t, temp) \
-        {temp = sha1_mix(W, t); e += rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999 + temp; sha1_store(W, t, temp); b = rotate_left(b, 30); }
+	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999; b = rotate_right(b, 2); }
 
 #define SHA1COMPRESS_FULL_ROUND2_STEP(a, b, c, d, e, W, t, temp) \
-	{temp = sha1_mix(W, t); e += rotate_left(a, 5) + sha1_f2(b,c,d) + 0x6ED9EBA1 + temp; sha1_store(W, t, temp); b = rotate_left(b, 30); }
+	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f2(b,c,d) + 0x6ED9EBA1; b = rotate_right(b, 2); }
 
 #define SHA1COMPRESS_FULL_ROUND3_STEP(a, b, c, d, e, W, t, temp) \
-	{temp = sha1_mix(W, t); e += rotate_left(a, 5) + sha1_f3(b,c,d) + 0x8F1BBCDC + temp; sha1_store(W, t, temp); b = rotate_left(b, 30); }
+	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f3(b,c,d) + 0x8F1BBCDC; b = rotate_right(b, 2); }
 
 #define SHA1COMPRESS_FULL_ROUND4_STEP(a, b, c, d, e, W, t, temp) \
-	{temp = sha1_mix(W, t); e += rotate_left(a, 5) + sha1_f4(b,c,d) + 0xCA62C1D6 + temp; sha1_store(W, t, temp); b = rotate_left(b, 30); }
+	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f4(b,c,d) + 0xCA62C1D6; b = rotate_right(b, 2); }
 
 
 #define SHA1_STORE_STATE(i) states[i][0] = a; states[i][1] = b; states[i][2] = c; states[i][3] = d; states[i][4] = e;
-
-
-
-void sha1_message_expansion(uint32_t W[80])
-{
-	unsigned i;
-	for (i = 16; i < 80; ++i)
-		W[i] = sha1_mix(W, i);
-}
 
 void sha1_compression(uint32_t ihv[5], const uint32_t m[16])
 {
@@ -268,314 +263,314 @@ void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80])
 
 
 
-void sha1_compression_states(uint32_t ihv[5], uint32_t W[80], uint32_t states[80][5])
+void sha1_compression_states(uint32_t ihv[5], const uint32_t m[16], uint32_t W[80], uint32_t states[80][5])
 {
 	uint32_t a = ihv[0], b = ihv[1], c = ihv[2], d = ihv[3], e = ihv[4];
-	//uint32_t temp;
+	uint32_t temp;
 
 #ifdef DOSTORESTATE00
 	SHA1_STORE_STATE(0)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(a, b, c, d, e, W, 0);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(a, b, c, d, e, m, W, 0, temp);
 
 #ifdef DOSTORESTATE01
 	SHA1_STORE_STATE(1)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(e, a, b, c, d, W, 1);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(e, a, b, c, d, m, W, 1, temp);
 
 #ifdef DOSTORESTATE02
 	SHA1_STORE_STATE(2)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(d, e, a, b, c, W, 2);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(d, e, a, b, c, m, W, 2, temp);
 
 #ifdef DOSTORESTATE03
 	SHA1_STORE_STATE(3)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(c, d, e, a, b, W, 3);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(c, d, e, a, b, m, W, 3, temp);
 
 #ifdef DOSTORESTATE04
 	SHA1_STORE_STATE(4)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(b, c, d, e, a, W, 4);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(b, c, d, e, a, m, W, 4, temp);
 
 #ifdef DOSTORESTATE05
 	SHA1_STORE_STATE(5)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(a, b, c, d, e, W, 5);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(a, b, c, d, e, m, W, 5, temp);
 
 #ifdef DOSTORESTATE06
 	SHA1_STORE_STATE(6)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(e, a, b, c, d, W, 6);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(e, a, b, c, d, m, W, 6, temp);
 
 #ifdef DOSTORESTATE07
 	SHA1_STORE_STATE(7)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(d, e, a, b, c, W, 7);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(d, e, a, b, c, m, W, 7, temp);
 
 #ifdef DOSTORESTATE08
 	SHA1_STORE_STATE(8)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(c, d, e, a, b, W, 8);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(c, d, e, a, b, m, W, 8, temp);
 
 #ifdef DOSTORESTATE09
 	SHA1_STORE_STATE(9)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(b, c, d, e, a, W, 9);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(b, c, d, e, a, m, W, 9, temp);
 
 #ifdef DOSTORESTATE10
 	SHA1_STORE_STATE(10)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(a, b, c, d, e, W, 10);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(a, b, c, d, e, m, W, 10, temp);
 
 #ifdef DOSTORESTATE11
 	SHA1_STORE_STATE(11)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(e, a, b, c, d, W, 11);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(e, a, b, c, d, m, W, 11, temp);
 
 #ifdef DOSTORESTATE12
 	SHA1_STORE_STATE(12)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(d, e, a, b, c, W, 12);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(d, e, a, b, c, m, W, 12, temp);
 
 #ifdef DOSTORESTATE13
 	SHA1_STORE_STATE(13)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(c, d, e, a, b, W, 13);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(c, d, e, a, b, m, W, 13, temp);
 
 #ifdef DOSTORESTATE14
 	SHA1_STORE_STATE(14)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(b, c, d, e, a, W, 14);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(b, c, d, e, a, m, W, 14, temp);
 
 #ifdef DOSTORESTATE15
 	SHA1_STORE_STATE(15)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(a, b, c, d, e, W, 15);
+	SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(a, b, c, d, e, m, W, 15, temp);
 
 #ifdef DOSTORESTATE16
 	SHA1_STORE_STATE(16)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(e, a, b, c, d, W, 16);
+	SHA1COMPRESS_FULL_ROUND1_STEP_EXPAND(e, a, b, c, d, W, 16, temp);
 
 #ifdef DOSTORESTATE17
 	SHA1_STORE_STATE(17)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(d, e, a, b, c, W, 17);
+	SHA1COMPRESS_FULL_ROUND1_STEP_EXPAND(d, e, a, b, c, W, 17, temp);
 
 #ifdef DOSTORESTATE18
 	SHA1_STORE_STATE(18)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(c, d, e, a, b, W, 18);
+	SHA1COMPRESS_FULL_ROUND1_STEP_EXPAND(c, d, e, a, b, W, 18, temp);
 
 #ifdef DOSTORESTATE19
 	SHA1_STORE_STATE(19)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(b, c, d, e, a, W, 19);
+	SHA1COMPRESS_FULL_ROUND1_STEP_EXPAND(b, c, d, e, a, W, 19, temp);
 
 
 
 #ifdef DOSTORESTATE20
 	SHA1_STORE_STATE(20)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 20);
+	SHA1COMPRESS_FULL_ROUND2_STEP(a, b, c, d, e, W, 20, temp);
 
 #ifdef DOSTORESTATE21
 	SHA1_STORE_STATE(21)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 21);
+	SHA1COMPRESS_FULL_ROUND2_STEP(e, a, b, c, d, W, 21, temp);
 
 #ifdef DOSTORESTATE22
 	SHA1_STORE_STATE(22)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 22);
+	SHA1COMPRESS_FULL_ROUND2_STEP(d, e, a, b, c, W, 22, temp);
 
 #ifdef DOSTORESTATE23
 	SHA1_STORE_STATE(23)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 23);
+	SHA1COMPRESS_FULL_ROUND2_STEP(c, d, e, a, b, W, 23, temp);
 
 #ifdef DOSTORESTATE24
 	SHA1_STORE_STATE(24)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(b, c, d, e, a, W, 24);
+	SHA1COMPRESS_FULL_ROUND2_STEP(b, c, d, e, a, W, 24, temp);
 
 #ifdef DOSTORESTATE25
 	SHA1_STORE_STATE(25)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 25);
+	SHA1COMPRESS_FULL_ROUND2_STEP(a, b, c, d, e, W, 25, temp);
 
 #ifdef DOSTORESTATE26
 	SHA1_STORE_STATE(26)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 26);
+	SHA1COMPRESS_FULL_ROUND2_STEP(e, a, b, c, d, W, 26, temp);
 
 #ifdef DOSTORESTATE27
 	SHA1_STORE_STATE(27)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 27);
+	SHA1COMPRESS_FULL_ROUND2_STEP(d, e, a, b, c, W, 27, temp);
 
 #ifdef DOSTORESTATE28
 	SHA1_STORE_STATE(28)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 28);
+	SHA1COMPRESS_FULL_ROUND2_STEP(c, d, e, a, b, W, 28, temp);
 
 #ifdef DOSTORESTATE29
 	SHA1_STORE_STATE(29)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(b, c, d, e, a, W, 29);
+	SHA1COMPRESS_FULL_ROUND2_STEP(b, c, d, e, a, W, 29, temp);
 
 #ifdef DOSTORESTATE30
 	SHA1_STORE_STATE(30)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 30);
+	SHA1COMPRESS_FULL_ROUND2_STEP(a, b, c, d, e, W, 30, temp);
 
 #ifdef DOSTORESTATE31
 	SHA1_STORE_STATE(31)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 31);
+	SHA1COMPRESS_FULL_ROUND2_STEP(e, a, b, c, d, W, 31, temp);
 
 #ifdef DOSTORESTATE32
 	SHA1_STORE_STATE(32)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 32);
+	SHA1COMPRESS_FULL_ROUND2_STEP(d, e, a, b, c, W, 32, temp);
 
 #ifdef DOSTORESTATE33
 	SHA1_STORE_STATE(33)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 33);
+	SHA1COMPRESS_FULL_ROUND2_STEP(c, d, e, a, b, W, 33, temp);
 
 #ifdef DOSTORESTATE34
 	SHA1_STORE_STATE(34)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(b, c, d, e, a, W, 34);
+	SHA1COMPRESS_FULL_ROUND2_STEP(b, c, d, e, a, W, 34, temp);
 
 #ifdef DOSTORESTATE35
 	SHA1_STORE_STATE(35)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(a, b, c, d, e, W, 35);
+	SHA1COMPRESS_FULL_ROUND2_STEP(a, b, c, d, e, W, 35, temp);
 
 #ifdef DOSTORESTATE36
 	SHA1_STORE_STATE(36)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(e, a, b, c, d, W, 36);
+	SHA1COMPRESS_FULL_ROUND2_STEP(e, a, b, c, d, W, 36, temp);
 
 #ifdef DOSTORESTATE37
 	SHA1_STORE_STATE(37)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(d, e, a, b, c, W, 37);
+	SHA1COMPRESS_FULL_ROUND2_STEP(d, e, a, b, c, W, 37, temp);
 
 #ifdef DOSTORESTATE38
 	SHA1_STORE_STATE(38)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(c, d, e, a, b, W, 38);
+	SHA1COMPRESS_FULL_ROUND2_STEP(c, d, e, a, b, W, 38, temp);
 
 #ifdef DOSTORESTATE39
 	SHA1_STORE_STATE(39)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND2_STEP(b, c, d, e, a, W, 39);
+	SHA1COMPRESS_FULL_ROUND2_STEP(b, c, d, e, a, W, 39, temp);
 
 
 
 #ifdef DOSTORESTATE40
 	SHA1_STORE_STATE(40)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(a, b, c, d, e, W, 40);
+	SHA1COMPRESS_FULL_ROUND3_STEP(a, b, c, d, e, W, 40, temp);
 
 #ifdef DOSTORESTATE41
 	SHA1_STORE_STATE(41)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(e, a, b, c, d, W, 41);
+	SHA1COMPRESS_FULL_ROUND3_STEP(e, a, b, c, d, W, 41, temp);
 
 #ifdef DOSTORESTATE42
 	SHA1_STORE_STATE(42)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(d, e, a, b, c, W, 42);
+	SHA1COMPRESS_FULL_ROUND3_STEP(d, e, a, b, c, W, 42, temp);
 
 #ifdef DOSTORESTATE43
 	SHA1_STORE_STATE(43)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(c, d, e, a, b, W, 43);
+	SHA1COMPRESS_FULL_ROUND3_STEP(c, d, e, a, b, W, 43, temp);
 
 #ifdef DOSTORESTATE44
 	SHA1_STORE_STATE(44)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(b, c, d, e, a, W, 44);
+	SHA1COMPRESS_FULL_ROUND3_STEP(b, c, d, e, a, W, 44, temp);
 
 #ifdef DOSTORESTATE45
 	SHA1_STORE_STATE(45)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(a, b, c, d, e, W, 45);
+	SHA1COMPRESS_FULL_ROUND3_STEP(a, b, c, d, e, W, 45, temp);
 
 #ifdef DOSTORESTATE46
 	SHA1_STORE_STATE(46)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(e, a, b, c, d, W, 46);
+	SHA1COMPRESS_FULL_ROUND3_STEP(e, a, b, c, d, W, 46, temp);
 
 #ifdef DOSTORESTATE47
 	SHA1_STORE_STATE(47)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(d, e, a, b, c, W, 47);
+	SHA1COMPRESS_FULL_ROUND3_STEP(d, e, a, b, c, W, 47, temp);
 
 #ifdef DOSTORESTATE48
 	SHA1_STORE_STATE(48)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(c, d, e, a, b, W, 48);
+	SHA1COMPRESS_FULL_ROUND3_STEP(c, d, e, a, b, W, 48, temp);
 
 #ifdef DOSTORESTATE49
 	SHA1_STORE_STATE(49)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(b, c, d, e, a, W, 49);
+	SHA1COMPRESS_FULL_ROUND3_STEP(b, c, d, e, a, W, 49, temp);
 
 #ifdef DOSTORESTATE50
 	SHA1_STORE_STATE(50)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(a, b, c, d, e, W, 50);
+	SHA1COMPRESS_FULL_ROUND3_STEP(a, b, c, d, e, W, 50, temp);
 
 #ifdef DOSTORESTATE51
 	SHA1_STORE_STATE(51)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(e, a, b, c, d, W, 51);
+	SHA1COMPRESS_FULL_ROUND3_STEP(e, a, b, c, d, W, 51, temp);
 
 #ifdef DOSTORESTATE52
 	SHA1_STORE_STATE(52)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(d, e, a, b, c, W, 52);
+	SHA1COMPRESS_FULL_ROUND3_STEP(d, e, a, b, c, W, 52, temp);
 
 #ifdef DOSTORESTATE53
 	SHA1_STORE_STATE(53)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(c, d, e, a, b, W, 53);
+	SHA1COMPRESS_FULL_ROUND3_STEP(c, d, e, a, b, W, 53, temp);
 
 #ifdef DOSTORESTATE54
 	SHA1_STORE_STATE(54)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(b, c, d, e, a, W, 54);
+	SHA1COMPRESS_FULL_ROUND3_STEP(b, c, d, e, a, W, 54, temp);
 
 #ifdef DOSTORESTATE55
 	SHA1_STORE_STATE(55)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(a, b, c, d, e, W, 55);
+	SHA1COMPRESS_FULL_ROUND3_STEP(a, b, c, d, e, W, 55, temp);
 
 #ifdef DOSTORESTATE56
 	SHA1_STORE_STATE(56)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(e, a, b, c, d, W, 56);
+	SHA1COMPRESS_FULL_ROUND3_STEP(e, a, b, c, d, W, 56, temp);
 
 #ifdef DOSTORESTATE57
 	SHA1_STORE_STATE(57)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(d, e, a, b, c, W, 57);
+	SHA1COMPRESS_FULL_ROUND3_STEP(d, e, a, b, c, W, 57, temp);
 
 #ifdef DOSTORESTATE58
 	SHA1_STORE_STATE(58)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(c, d, e, a, b, W, 58);
+	SHA1COMPRESS_FULL_ROUND3_STEP(c, d, e, a, b, W, 58, temp);
 
 #ifdef DOSTORESTATE59
 	SHA1_STORE_STATE(59)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND3_STEP(b, c, d, e, a, W, 59);
+	SHA1COMPRESS_FULL_ROUND3_STEP(b, c, d, e, a, W, 59, temp);
 
 
 
@@ -583,102 +578,102 @@ void sha1_compression_states(uint32_t ihv[5], uint32_t W[80], uint32_t states[80
 #ifdef DOSTORESTATE60
 	SHA1_STORE_STATE(60)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(a, b, c, d, e, W, 60);
+	SHA1COMPRESS_FULL_ROUND4_STEP(a, b, c, d, e, W, 60, temp);
 
 #ifdef DOSTORESTATE61
 	SHA1_STORE_STATE(61)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(e, a, b, c, d, W, 61);
+	SHA1COMPRESS_FULL_ROUND4_STEP(e, a, b, c, d, W, 61, temp);
 
 #ifdef DOSTORESTATE62
 	SHA1_STORE_STATE(62)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(d, e, a, b, c, W, 62);
+	SHA1COMPRESS_FULL_ROUND4_STEP(d, e, a, b, c, W, 62, temp);
 
 #ifdef DOSTORESTATE63
 	SHA1_STORE_STATE(63)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(c, d, e, a, b, W, 63);
+	SHA1COMPRESS_FULL_ROUND4_STEP(c, d, e, a, b, W, 63, temp);
 
 #ifdef DOSTORESTATE64
 	SHA1_STORE_STATE(64)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(b, c, d, e, a, W, 64);
+	SHA1COMPRESS_FULL_ROUND4_STEP(b, c, d, e, a, W, 64, temp);
 
 #ifdef DOSTORESTATE65
 	SHA1_STORE_STATE(65)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(a, b, c, d, e, W, 65);
+	SHA1COMPRESS_FULL_ROUND4_STEP(a, b, c, d, e, W, 65, temp);
 
 #ifdef DOSTORESTATE66
 	SHA1_STORE_STATE(66)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(e, a, b, c, d, W, 66);
+	SHA1COMPRESS_FULL_ROUND4_STEP(e, a, b, c, d, W, 66, temp);
 
 #ifdef DOSTORESTATE67
 	SHA1_STORE_STATE(67)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(d, e, a, b, c, W, 67);
+	SHA1COMPRESS_FULL_ROUND4_STEP(d, e, a, b, c, W, 67, temp);
 
 #ifdef DOSTORESTATE68
 	SHA1_STORE_STATE(68)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(c, d, e, a, b, W, 68);
+	SHA1COMPRESS_FULL_ROUND4_STEP(c, d, e, a, b, W, 68, temp);
 
 #ifdef DOSTORESTATE69
 	SHA1_STORE_STATE(69)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(b, c, d, e, a, W, 69);
+	SHA1COMPRESS_FULL_ROUND4_STEP(b, c, d, e, a, W, 69, temp);
 
 #ifdef DOSTORESTATE70
 	SHA1_STORE_STATE(70)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(a, b, c, d, e, W, 70);
+	SHA1COMPRESS_FULL_ROUND4_STEP(a, b, c, d, e, W, 70, temp);
 
 #ifdef DOSTORESTATE71
 	SHA1_STORE_STATE(71)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(e, a, b, c, d, W, 71);
+	SHA1COMPRESS_FULL_ROUND4_STEP(e, a, b, c, d, W, 71, temp);
 
 #ifdef DOSTORESTATE72
 	SHA1_STORE_STATE(72)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(d, e, a, b, c, W, 72);
+	SHA1COMPRESS_FULL_ROUND4_STEP(d, e, a, b, c, W, 72, temp);
 
 #ifdef DOSTORESTATE73
 	SHA1_STORE_STATE(73)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(c, d, e, a, b, W, 73);
+	SHA1COMPRESS_FULL_ROUND4_STEP(c, d, e, a, b, W, 73, temp);
 
 #ifdef DOSTORESTATE74
 	SHA1_STORE_STATE(74)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(b, c, d, e, a, W, 74);
+	SHA1COMPRESS_FULL_ROUND4_STEP(b, c, d, e, a, W, 74, temp);
 
 #ifdef DOSTORESTATE75
 	SHA1_STORE_STATE(75)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(a, b, c, d, e, W, 75);
+	SHA1COMPRESS_FULL_ROUND4_STEP(a, b, c, d, e, W, 75, temp);
 
 #ifdef DOSTORESTATE76
 	SHA1_STORE_STATE(76)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(e, a, b, c, d, W, 76);
+	SHA1COMPRESS_FULL_ROUND4_STEP(e, a, b, c, d, W, 76, temp);
 
 #ifdef DOSTORESTATE77
 	SHA1_STORE_STATE(77)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(d, e, a, b, c, W, 77);
+	SHA1COMPRESS_FULL_ROUND4_STEP(d, e, a, b, c, W, 77, temp);
 
 #ifdef DOSTORESTATE78
 	SHA1_STORE_STATE(78)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(c, d, e, a, b, W, 78);
+	SHA1COMPRESS_FULL_ROUND4_STEP(c, d, e, a, b, W, 78, temp);
 
 #ifdef DOSTORESTATE79
 	SHA1_STORE_STATE(79)
 #endif
-	HASHCLASH_SHA1COMPRESS_ROUND4_STEP(b, c, d, e, a, W, 79);
+	SHA1COMPRESS_FULL_ROUND4_STEP(b, c, d, e, a, W, 79, temp);
 
 
 
@@ -957,10 +952,6 @@ sha1_recompression_type sha1_recompression_step[80] =
 	sha1recompress_fast_70, sha1recompress_fast_71, sha1recompress_fast_72, sha1recompress_fast_73, sha1recompress_fast_74, sha1recompress_fast_75, sha1recompress_fast_76, sha1recompress_fast_77, sha1recompress_fast_78, sha1recompress_fast_79,
 };
 
-
-
-
-
 void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 {
 	unsigned i, j;
@@ -973,17 +964,16 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	ctx->ihv1[2] = ctx->ihv[2];
 	ctx->ihv1[3] = ctx->ihv[3];
 	ctx->ihv1[4] = ctx->ihv[4];
-	memcpy(ctx->m1, block, 64);
-	sha1_message_expansion(ctx->m1);
 
-	sha1_compression_states(ctx->ihv, ctx->m1, ctx->states);
+	sha1_compression_states(ctx->ihv, block, ctx->m1, ctx->states);
 
-        if (ctx->detect_coll && ctx->ubc_check)
-        {
-                ubc_check(ctx->m1, ubc_dv_mask);
-        }
 	if (ctx->detect_coll)
 	{
+		if (ctx->ubc_check)
+		{
+			ubc_check(ctx->m1, ubc_dv_mask);
+		}
+
 		for (i = 0; sha1_dvs[i].dvType != 0; ++i)
 		{
 			if ((0 == ctx->ubc_check) || (((uint32_t)(1) << sha1_dvs[i].maskb) & ubc_dv_mask[sha1_dvs[i].maski]))
@@ -996,7 +986,7 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 					|| (ctx->reduced_round_coll && ctx->ihv1[0] == ctx->ihv2[0] && ctx->ihv1[1] == ctx->ihv2[1] && ctx->ihv1[2] == ctx->ihv2[2] && ctx->ihv1[3] == ctx->ihv2[3] && ctx->ihv1[4] == ctx->ihv2[4]))
 				{
 					ctx->found_collision = 1;
-					// TODO: call callback
+
 					if (ctx->callback != NULL)
 						ctx->callback(ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2);
 
@@ -1010,19 +1000,6 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 				}
 			}
 		}
-	}
-}
-
-
-
-
-
-void swap_bytes(uint32_t val[16])
-{
-	unsigned i;
-	for (i = 0; i < 16; ++i)
-	{
-		val[i] = sha1_bswap32(val + i);
 	}
 }
 
@@ -1093,9 +1070,6 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len)
 	{
 		ctx->total += fill;
 		memcpy(ctx->buffer + left, buf, fill);
-#if defined(BIGENDIAN)
-		swap_bytes((uint32_t*)(ctx->buffer));
-#endif /*defined(BIGENDIAN)*/
 		sha1_process(ctx, (uint32_t*)(ctx->buffer));
 		buf += fill;
 		len -= fill;
@@ -1104,13 +1078,7 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, unsigned len)
 	while (len >= 64)
 	{
 		ctx->total += 64;
-#if defined(BIGENDIAN)
-                sha1_process(ctx, (uint32_t*)(buf));
-#else
-		memcpy(ctx->buffer, buf, 64);
-		swap_bytes((uint32_t*)(ctx->buffer));
-		sha1_process(ctx, (uint32_t*)(ctx->buffer));
-#endif
+		sha1_process(ctx, (uint32_t*)(buf));
 		buf += 64;
 		len -= 64;
 	}
@@ -1146,9 +1114,6 @@ int SHA1DCFinal(unsigned char output[20], SHA1_CTX *ctx)
 	ctx->buffer[61] = (unsigned char)(total >> 16);
 	ctx->buffer[62] = (unsigned char)(total >> 8);
 	ctx->buffer[63] = (unsigned char)(total);
-#if !defined(BIGENDIAN)
-	swap_bytes((uint32_t*)(ctx->buffer));
-#endif
 	sha1_process(ctx, (uint32_t*)(ctx->buffer));
 	output[0] = (unsigned char)(ctx->ihv[0] >> 24);
 	output[1] = (unsigned char)(ctx->ihv[0] >> 16);
