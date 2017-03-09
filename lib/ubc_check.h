@@ -35,6 +35,8 @@ void ubc_check(const uint32_t W[80], uint32_t dvmask[DVMASKSIZE]);
 #define DOSTORESTATE58
 #define DOSTORESTATE65
 
+#define CHECK_DVMASK(_DVMASK) (0 != _DVMASK[0])
+
 #if defined(__cplusplus)
 }
 #endif

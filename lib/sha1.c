@@ -52,19 +52,19 @@
 	{ b = rotate_right(b, 30); e -= rotate_left(a, 5) + sha1_f4(b,c,d) + 0xCA62C1D6 + m[t]; }
 
 #define SHA1COMPRESS_FULL_ROUND1_STEP_LOAD(a, b, c, d, e, m, W, t, temp) \
-	{sha1_load(m, t, temp); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999; b = rotate_right(b, 2);}
+	{sha1_load(m, t, temp); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999; b = rotate_left(b, 30);}
 
 #define SHA1COMPRESS_FULL_ROUND1_STEP_EXPAND(a, b, c, d, e, W, t, temp) \
-	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999; b = rotate_right(b, 2); }
+	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f1(b,c,d) + 0x5A827999; b = rotate_left(b, 30); }
 
 #define SHA1COMPRESS_FULL_ROUND2_STEP(a, b, c, d, e, W, t, temp) \
-	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f2(b,c,d) + 0x6ED9EBA1; b = rotate_right(b, 2); }
+	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f2(b,c,d) + 0x6ED9EBA1; b = rotate_left(b, 30); }
 
 #define SHA1COMPRESS_FULL_ROUND3_STEP(a, b, c, d, e, W, t, temp) \
-	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f3(b,c,d) + 0x8F1BBCDC; b = rotate_right(b, 2); }
+	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f3(b,c,d) + 0x8F1BBCDC; b = rotate_left(b, 30); }
 
 #define SHA1COMPRESS_FULL_ROUND4_STEP(a, b, c, d, e, W, t, temp) \
-	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f4(b,c,d) + 0xCA62C1D6; b = rotate_right(b, 2); }
+	{temp = sha1_mix(W, t); sha1_store(W, t, temp); e += temp + rotate_left(a, 5) + sha1_f4(b,c,d) + 0xCA62C1D6; b = rotate_left(b, 30); }
 
 
 #define SHA1_STORE_STATE(i) states[i][0] = a; states[i][1] = b; states[i][2] = c; states[i][3] = d; states[i][4] = e;
@@ -955,10 +955,12 @@ sha1_recompression_type sha1_recompression_step[80] =
 void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 {
 	unsigned i, j;
-	uint32_t ubc_dv_mask[DVMASKSIZE];
+	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0 };
 	uint32_t ihvtmp[5];
+	/*
 	for (i=0; i < DVMASKSIZE; ++i)
 		ubc_dv_mask[i]=0;
+	 */
 	ctx->ihv1[0] = ctx->ihv[0];
 	ctx->ihv1[1] = ctx->ihv[1];
 	ctx->ihv1[2] = ctx->ihv[2];
@@ -969,34 +971,40 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 
 	if (ctx->detect_coll)
 	{
+		int perform_full_check = 1;
+
 		if (ctx->ubc_check)
 		{
 			ubc_check(ctx->m1, ubc_dv_mask);
+			perform_full_check = CHECK_DVMASK(ubc_dv_mask);
 		}
 
-		for (i = 0; sha1_dvs[i].dvType != 0; ++i)
+		if (perform_full_check)
 		{
-			if ((0 == ctx->ubc_check) || (((uint32_t)(1) << sha1_dvs[i].maskb) & ubc_dv_mask[sha1_dvs[i].maski]))
+			for (i = 0; sha1_dvs[i].dvType != 0; ++i)
 			{
-				for (j = 0; j < 80; ++j)
-					ctx->m2[j] = ctx->m1[j] ^ sha1_dvs[i].dm[j];
-				(sha1_recompression_step[sha1_dvs[i].testt])(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
-				// to verify SHA-1 collision detection code with collisions for reduced-step SHA-1
-				if ((ihvtmp[0] == ctx->ihv[0] && ihvtmp[1] == ctx->ihv[1] && ihvtmp[2] == ctx->ihv[2] && ihvtmp[3] == ctx->ihv[3] && ihvtmp[4] == ctx->ihv[4])
-					|| (ctx->reduced_round_coll && ctx->ihv1[0] == ctx->ihv2[0] && ctx->ihv1[1] == ctx->ihv2[1] && ctx->ihv1[2] == ctx->ihv2[2] && ctx->ihv1[3] == ctx->ihv2[3] && ctx->ihv1[4] == ctx->ihv2[4]))
+				if ((0 == ctx->ubc_check) || (((uint32_t)(1) << sha1_dvs[i].maskb) & ubc_dv_mask[sha1_dvs[i].maski]))
 				{
-					ctx->found_collision = 1;
-
-					if (ctx->callback != NULL)
-						ctx->callback(ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2);
-
-					if (ctx->safe_hash)
+					for (j = 0; j < 80; ++j)
+						ctx->m2[j] = ctx->m1[j] ^ sha1_dvs[i].dm[j];
+					(sha1_recompression_step[sha1_dvs[i].testt])(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
+					// to verify SHA-1 collision detection code with collisions for reduced-step SHA-1
+					if ((ihvtmp[0] == ctx->ihv[0] && ihvtmp[1] == ctx->ihv[1] && ihvtmp[2] == ctx->ihv[2] && ihvtmp[3] == ctx->ihv[3] && ihvtmp[4] == ctx->ihv[4])
+						|| (ctx->reduced_round_coll && ctx->ihv1[0] == ctx->ihv2[0] && ctx->ihv1[1] == ctx->ihv2[1] && ctx->ihv1[2] == ctx->ihv2[2] && ctx->ihv1[3] == ctx->ihv2[3] && ctx->ihv1[4] == ctx->ihv2[4]))
 					{
-						sha1_compression_W(ctx->ihv, ctx->m1);
-						sha1_compression_W(ctx->ihv, ctx->m1);
-					}
+						ctx->found_collision = 1;
 
-					break;
+						if (ctx->callback != NULL)
+							ctx->callback(ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2);
+
+						if (ctx->safe_hash)
+						{
+							sha1_compression_W(ctx->ihv, ctx->m1);
+							sha1_compression_W(ctx->ihv, ctx->m1);
+						}
+
+						break;
+					}
 				}
 			}
 		}
