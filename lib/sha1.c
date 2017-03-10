@@ -13,6 +13,24 @@
 #include "sha1.h"
 #include "ubc_check.h"
 
+
+/* 
+   Because Little-Endian architectures are most common,
+   we only set BIGENDIAN if one of these conditions is met.
+   Note that all MSFT platforms are little endian,
+   so none of these will be defined under the MSC compiler.
+   If you are compiling on a big endian platform and your compiler does not define one of these,
+   you will have to add whatever macros your tool chain defines to indicate Big-Endianness.
+ */
+#if (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || \
+    (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __BIG_ENDIAN__)) || \
+    defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__THUMBEB__) ||  defined(__AARCH64EB__) || \
+    defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__)
+
+#define BIGENDIAN	(1)
+
+#endif /*ENDIANNESS SELECTION*/
+
 #define rotate_right(x,n) (((x)>>(n))|((x)<<(32-(n))))
 #define rotate_left(x,n)  (((x)<<(n))|((x)>>(32-(n))))
 
