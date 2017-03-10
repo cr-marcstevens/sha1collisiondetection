@@ -43,14 +43,14 @@ make
 
 ## Command-line usage
 
-There are two programs `bin/sha1dc` and `bin/sha1dc_partialcoll`.
-The first program `bin/sha1dc` will detect and warn for files that were generated with a cryptanalytic SHA-1 collision attack like the one documented at https://shattered.io/.
-The second program `bin/sha1dc_partialcoll` will detect and warn for files that were generated with a cryptanalytic collision attack against reduced-round SHA-1 (of which there are a few examples so far).
+There are two programs `bin/sha1dcsum` and `bin/sha1dcsum_partialcoll`.
+The first program `bin/sha1dcsum` will detect and warn for files that were generated with a cryptanalytic SHA-1 collision attack like the one documented at https://shattered.io/.
+The second program `bin/sha1dcsum_partialcoll` will detect and warn for files that were generated with a cryptanalytic collision attack against reduced-round SHA-1 (of which there are a few examples so far).
 
 Examples:
 ```
-bin/sha1dc test/sha1_reducedsha_coll.bin
-bin/sha1dc_partialcoll test/sha1reducedsha_coll.bin
+bin/sha1dcsum test/sha1_reducedsha_coll.bin test/shattered-1.pdf
+bin/sha1dcsum_partialcoll test/sha1reducedsha_coll.bin test/shattered-1.pdf
 ```
 
 ## Library usage
@@ -62,8 +62,14 @@ See the documentation in `lib/sha1.h`. Here is a simple example code snippet:
 SHA1_CTX ctx;
 unsigned char hash[20];
 SHA1DCInit(&ctx);
-// SHA1DCSetSafeHash(&ctx, 0); // disable safe-hash mode (safe-hash mode is enabled by default)
+
+/** disable safe-hash mode (safe-hash mode is enabled by default) **/
+// SHA1DCSetSafeHash(&ctx, 0);
+/** disable use of unavoidable attack conditions to speed up detection (enabled by default) **/
+// SHA1DCSetUseUBC(&ctx, 0); 
+
 SHA1DCUpdate(&ctx, buffer, (unsigned)(size));
+
 int iscoll = SHA1DCFinal(hash,&ctx);
 if (iscoll)
     printf("collision detected");
