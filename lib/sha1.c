@@ -985,8 +985,9 @@ sha1_recompression_type sha1_recompression_step[80] =
 void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 {
 	unsigned i, j;
-	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0 };
+	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0xFFFFFFFF };
 	uint32_t ihvtmp[5];
+	
 	/*
 	for (i=0; i < DVMASKSIZE; ++i)
 		ubc_dv_mask[i]=0;
@@ -1001,15 +1002,12 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 
 	if (ctx->detect_coll)
 	{
-		int perform_full_check = 1;
-
 		if (ctx->ubc_check)
 		{
 			ubc_check(ctx->m1, ubc_dv_mask);
-			perform_full_check = CHECK_DVMASK(ubc_dv_mask);
 		}
 
-		if (perform_full_check)
+		if (ubc_dv_mask[0] != 0)
 		{
 			for (i = 0; sha1_dvs[i].dvType != 0; ++i)
 			{
