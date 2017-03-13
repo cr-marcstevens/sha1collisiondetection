@@ -66,6 +66,7 @@ SRC_DIR=src
 SRC_DEP_DIR=dep_src
 SRC_OBJ_DIR=obj_src
 
+H_DEP:=$(shell find . -type f -name "*.h")
 FS_LIB=$(wildcard $(LIB_DIR)/*.c)
 FS_SRC=$(wildcard $(SRC_DIR)/*.c)
 FS_OBJ_LIB=$(FS_LIB:$(LIB_DIR)/%.c=$(LIB_OBJ_DIR)/%.lo)
@@ -143,14 +144,14 @@ bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 $(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
 	$(MKDIR) $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
-$(SRC_OBJ_DIR)/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d
+$(SRC_OBJ_DIR)/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d $(H_DEP)
 	$(MKDIR) $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 
 $(LIB_DEP_DIR)/%.d: $(LIB_DIR)/%.c
 	$(MKDIR) $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
-$(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d
+$(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d $(H_DEP)
 	$(MKDIR) $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 -include $(FS_DEP)
