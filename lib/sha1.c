@@ -1013,34 +1013,37 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 		{
 			for (i = 0; sha1_dvs[i].dvType != 0; ++i)
 			{
-				for (j = 0; j < 80; ++j)
-					ctx->m2[j] = ctx->m1[j] ^ sha1_dvs[i].dm[j];
-
-				/* (sha1_recompression_step[sha1_dvs[i].testt])(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]); */
-				switch (sha1_dvs[i].testt)
+				if (ubc_dv_mask[0] & ((uint32_t)(1) << sha1_dvs[i].maskb))
 				{
-				case 58:
-					sha1recompress_fast_58(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
-					break;
-				case 65:
-					sha1recompress_fast_65(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
-					break;
-				default:
-					abort();
-				}
-				/* to verify SHA-1 collision detection code with collisions for reduced-step SHA-1 */
-				if ((0 == ((ihvtmp[0] ^ ctx->ihv[0]) | (ihvtmp[1] ^ ctx->ihv[1]) | (ihvtmp[2] ^ ctx->ihv[2]) | (ihvtmp[3] ^ ctx->ihv[3]) | (ihvtmp[4] ^ ctx->ihv[4])))
-					|| (ctx->reduced_round_coll && 0==((ctx->ihv1[0] ^ ctx->ihv2[0]) | (ctx->ihv1[1] ^ ctx->ihv2[1]) | (ctx->ihv1[2] ^ ctx->ihv2[2]) | (ctx->ihv1[3] ^ ctx->ihv2[3]) | (ctx->ihv1[4] ^ ctx->ihv2[4]))))
-				{
-					ctx->found_collision = 1;
+					for (j = 0; j < 80; ++j)
+						ctx->m2[j] = ctx->m1[j] ^ sha1_dvs[i].dm[j];
 
-					if (ctx->safe_hash)
+					/* (sha1_recompression_step[sha1_dvs[i].testt])(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]); */
+					switch (sha1_dvs[i].testt)
 					{
-						sha1_compression_W(ctx->ihv, ctx->m1);
-						sha1_compression_W(ctx->ihv, ctx->m1);
+					case 58:
+						sha1recompress_fast_58(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
+						break;
+					case 65:
+						sha1recompress_fast_65(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
+						break;
+					default:
+						abort();
 					}
+					/* to verify SHA-1 collision detection code with collisions for reduced-step SHA-1 */
+					if ((0 == ((ihvtmp[0] ^ ctx->ihv[0]) | (ihvtmp[1] ^ ctx->ihv[1]) | (ihvtmp[2] ^ ctx->ihv[2]) | (ihvtmp[3] ^ ctx->ihv[3]) | (ihvtmp[4] ^ ctx->ihv[4])))
+						|| (ctx->reduced_round_coll && 0==((ctx->ihv1[0] ^ ctx->ihv2[0]) | (ctx->ihv1[1] ^ ctx->ihv2[1]) | (ctx->ihv1[2] ^ ctx->ihv2[2]) | (ctx->ihv1[3] ^ ctx->ihv2[3]) | (ctx->ihv1[4] ^ ctx->ihv2[4]))))
+					{
+						ctx->found_collision = 1;
 
-					break;
+						if (ctx->safe_hash)
+						{
+							sha1_compression_W(ctx->ihv, ctx->m1);
+							sha1_compression_W(ctx->ihv, ctx->m1);
+						}
+
+						break;
+					}
 				}
 			}
 		}
