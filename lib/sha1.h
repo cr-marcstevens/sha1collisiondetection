@@ -20,7 +20,7 @@ void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80]); */
 
 /* same as sha1_compression_W, but additionally store intermediate states */
 /* only stores states ii (the state between step ii-1 and step ii) when DOSTORESTATEii is defined in ubc_check.h */
-void sha1_compression_states(uint32_t ihv[5], const uint32_t m[16], uint32_t W[80], uint32_t states[80][5]);
+void sha1_compression_states(uint32_t[5], const uint32_t[16], uint32_t[80], uint32_t[80][5]);
 
 /*
 // function type for sha1_recompression_step_T (uint32_t ihvin[5], uint32_t ihvout[5], const uint32_t me2[80], const uint32_t state[5])
@@ -83,7 +83,7 @@ void SHA1DCSetUseUBC(SHA1_CTX*, int);
 
 /* function to disable or enable the use of Collision Detection */
 /* enabled by default */
-void SHA1DCSetUseDetectColl(SHA1_CTX* ctx, int detect_coll);
+void SHA1DCSetUseDetectColl(SHA1_CTX*, int);
 
 /* function to disable or enable the detection of reduced-round SHA-1 collisions */
 /* disabled by default */

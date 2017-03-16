@@ -88,7 +88,7 @@
 
 #define SHA1_STORE_STATE(i) states[i][0] = a; states[i][1] = b; states[i][2] = c; states[i][3] = d; states[i][4] = e;
 
-/*
+#ifdef BUILDNOCOLLDETECTSHA1COMPRESSION
 void sha1_compression(uint32_t ihv[5], const uint32_t m[16])
 {
 	uint32_t W[80];
@@ -187,7 +187,8 @@ void sha1_compression(uint32_t ihv[5], const uint32_t m[16])
 
 	ihv[0] += a; ihv[1] += b; ihv[2] += c; ihv[3] += d; ihv[4] += e;
 }
-*/
+#endif /*BUILDNOCOLLDETECTSHA1COMPRESSION*/
+
 
 static void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80])
 {
@@ -871,114 +872,735 @@ static void sha1recompress_fast_ ## t (uint32_t ihvin[5], uint32_t ihvout[5], co
 	ihvout[0] = ihvin[0] + a; ihvout[1] = ihvin[1] + b; ihvout[2] = ihvin[2] + c; ihvout[3] = ihvin[3] + d; ihvout[4] = ihvin[4] + e; \
 }
 
-/*
+#ifdef DOSTORESTATE0
 SHA1_RECOMPRESS(0)
+#endif
+
+#ifdef DOSTORESTATE1
 SHA1_RECOMPRESS(1)
+#endif
+
+#ifdef DOSTORESTATE2
 SHA1_RECOMPRESS(2)
+#endif
+
+#ifdef DOSTORESTATE3
 SHA1_RECOMPRESS(3)
+#endif
+
+#ifdef DOSTORESTATE4
 SHA1_RECOMPRESS(4)
+#endif
+
+#ifdef DOSTORESTATE5
 SHA1_RECOMPRESS(5)
+#endif
+
+#ifdef DOSTORESTATE6
 SHA1_RECOMPRESS(6)
+#endif
+
+#ifdef DOSTORESTATE7
 SHA1_RECOMPRESS(7)
+#endif
+
+#ifdef DOSTORESTATE8
 SHA1_RECOMPRESS(8)
+#endif
+
+#ifdef DOSTORESTATE9
 SHA1_RECOMPRESS(9)
+#endif
 
+#ifdef DOSTORESTATE10
 SHA1_RECOMPRESS(10)
+#endif
+
+#ifdef DOSTORESTATE11
 SHA1_RECOMPRESS(11)
+#endif
+
+#ifdef DOSTORESTATE12
 SHA1_RECOMPRESS(12)
+#endif
+
+#ifdef DOSTORESTATE13
 SHA1_RECOMPRESS(13)
+#endif
+
+#ifdef DOSTORESTATE14
 SHA1_RECOMPRESS(14)
+#endif
+
+#ifdef DOSTORESTATE15
 SHA1_RECOMPRESS(15)
+#endif
+
+#ifdef DOSTORESTATE16
 SHA1_RECOMPRESS(16)
+#endif
+
+#ifdef DOSTORESTATE17
 SHA1_RECOMPRESS(17)
+#endif
+
+#ifdef DOSTORESTATE18
 SHA1_RECOMPRESS(18)
+#endif
+
+#ifdef DOSTORESTATE19
 SHA1_RECOMPRESS(19)
+#endif
 
+#ifdef DOSTORESTATE20
 SHA1_RECOMPRESS(20)
+#endif
+
+#ifdef DOSTORESTATE21
 SHA1_RECOMPRESS(21)
+#endif
+
+#ifdef DOSTORESTATE22
 SHA1_RECOMPRESS(22)
+#endif
+
+#ifdef DOSTORESTATE23
 SHA1_RECOMPRESS(23)
+#endif
+
+#ifdef DOSTORESTATE24
 SHA1_RECOMPRESS(24)
+#endif
+
+#ifdef DOSTORESTATE25
 SHA1_RECOMPRESS(25)
+#endif
+
+#ifdef DOSTORESTATE26
 SHA1_RECOMPRESS(26)
+#endif
+
+#ifdef DOSTORESTATE27
 SHA1_RECOMPRESS(27)
+#endif
+
+#ifdef DOSTORESTATE28
 SHA1_RECOMPRESS(28)
+#endif
+
+#ifdef DOSTORESTATE29
 SHA1_RECOMPRESS(29)
+#endif
 
+#ifdef DOSTORESTATE30
 SHA1_RECOMPRESS(30)
+#endif
+
+#ifdef DOSTORESTATE31
 SHA1_RECOMPRESS(31)
+#endif
+
+#ifdef DOSTORESTATE32
 SHA1_RECOMPRESS(32)
+#endif
+
+#ifdef DOSTORESTATE33
 SHA1_RECOMPRESS(33)
+#endif
+
+#ifdef DOSTORESTATE34
 SHA1_RECOMPRESS(34)
+#endif
+
+#ifdef DOSTORESTATE35
 SHA1_RECOMPRESS(35)
+#endif
+
+#ifdef DOSTORESTATE36
 SHA1_RECOMPRESS(36)
+#endif
+
+#ifdef DOSTORESTATE37
 SHA1_RECOMPRESS(37)
+#endif
+
+#ifdef DOSTORESTATE38
 SHA1_RECOMPRESS(38)
+#endif
+
+#ifdef DOSTORESTATE39
 SHA1_RECOMPRESS(39)
+#endif
 
+#ifdef DOSTORESTATE40
 SHA1_RECOMPRESS(40)
+#endif
+
+#ifdef DOSTORESTATE41
 SHA1_RECOMPRESS(41)
+#endif
+
+#ifdef DOSTORESTATE42
 SHA1_RECOMPRESS(42)
+#endif
+
+#ifdef DOSTORESTATE43
 SHA1_RECOMPRESS(43)
+#endif
+
+#ifdef DOSTORESTATE44
 SHA1_RECOMPRESS(44)
+#endif
+
+#ifdef DOSTORESTATE45
 SHA1_RECOMPRESS(45)
+#endif
+
+#ifdef DOSTORESTATE46
 SHA1_RECOMPRESS(46)
+#endif
+
+#ifdef DOSTORESTATE47
 SHA1_RECOMPRESS(47)
+#endif
+
+#ifdef DOSTORESTATE48
 SHA1_RECOMPRESS(48)
+#endif
+
+#ifdef DOSTORESTATE49
 SHA1_RECOMPRESS(49)
+#endif
 
+#ifdef DOSTORESTATE50
 SHA1_RECOMPRESS(50)
+#endif
+
+#ifdef DOSTORESTATE51
 SHA1_RECOMPRESS(51)
+#endif
+
+#ifdef DOSTORESTATE52
 SHA1_RECOMPRESS(52)
+#endif
+
+#ifdef DOSTORESTATE53
 SHA1_RECOMPRESS(53)
+#endif
+
+#ifdef DOSTORESTATE54
 SHA1_RECOMPRESS(54)
+#endif
+
+#ifdef DOSTORESTATE55
 SHA1_RECOMPRESS(55)
+#endif
+
+#ifdef DOSTORESTATE56
 SHA1_RECOMPRESS(56)
+#endif
+
+#ifdef DOSTORESTATE57
 SHA1_RECOMPRESS(57)
-*/
+#endif
+
+#ifdef DOSTORESTATE58
 SHA1_RECOMPRESS(58)
-/*
+#endif
+
+#ifdef DOSTORESTATE59
 SHA1_RECOMPRESS(59)
+#endif
 
+#ifdef DOSTORESTATE60
 SHA1_RECOMPRESS(60)
+#endif
+
+#ifdef DOSTORESTATE61
 SHA1_RECOMPRESS(61)
+#endif
+
+#ifdef DOSTORESTATE62
 SHA1_RECOMPRESS(62)
+#endif
+
+#ifdef DOSTORESTATE63
 SHA1_RECOMPRESS(63)
+#endif
+
+#ifdef DOSTORESTATE64
 SHA1_RECOMPRESS(64)
-*/
+#endif
+
+#ifdef DOSTORESTATE65
 SHA1_RECOMPRESS(65)
-/*
+#endif
+
+#ifdef DOSTORESTATE66
 SHA1_RECOMPRESS(66)
+#endif
+
+#ifdef DOSTORESTATE67
 SHA1_RECOMPRESS(67)
+#endif
+
+#ifdef DOSTORESTATE68
 SHA1_RECOMPRESS(68)
+#endif
+
+#ifdef DOSTORESTATE69
 SHA1_RECOMPRESS(69)
+#endif
 
+#ifdef DOSTORESTATE70
 SHA1_RECOMPRESS(70)
+#endif
+
+#ifdef DOSTORESTATE71
 SHA1_RECOMPRESS(71)
+#endif
+
+#ifdef DOSTORESTATE72
 SHA1_RECOMPRESS(72)
+#endif
+
+#ifdef DOSTORESTATE73
 SHA1_RECOMPRESS(73)
+#endif
+
+#ifdef DOSTORESTATE74
 SHA1_RECOMPRESS(74)
+#endif
+
+#ifdef DOSTORESTATE75
 SHA1_RECOMPRESS(75)
+#endif
+
+#ifdef DOSTORESTATE76
 SHA1_RECOMPRESS(76)
+#endif
+
+#ifdef DOSTORESTATE77
 SHA1_RECOMPRESS(77)
+#endif
+
+#ifdef DOSTORESTATE78
 SHA1_RECOMPRESS(78)
+#endif
+
+#ifdef DOSTORESTATE79
 SHA1_RECOMPRESS(79)
-*/
+#endif
 
-/*
-sha1_recompression_type sha1_recompression_step[80] =
+static void sha1_recompression_step(uint32_t step, uint32_t ihvin[5], uint32_t ihvout[5], const uint32_t me2[80], const uint32_t state[5])
 {
-	sha1recompress_fast_0, sha1recompress_fast_1, sha1recompress_fast_2, sha1recompress_fast_3, sha1recompress_fast_4, sha1recompress_fast_5, sha1recompress_fast_6, sha1recompress_fast_7, sha1recompress_fast_8, sha1recompress_fast_9,
-	sha1recompress_fast_10, sha1recompress_fast_11, sha1recompress_fast_12, sha1recompress_fast_13, sha1recompress_fast_14, sha1recompress_fast_15, sha1recompress_fast_16, sha1recompress_fast_17, sha1recompress_fast_18, sha1recompress_fast_19,
-	sha1recompress_fast_20, sha1recompress_fast_21, sha1recompress_fast_22, sha1recompress_fast_23, sha1recompress_fast_24, sha1recompress_fast_25, sha1recompress_fast_26, sha1recompress_fast_27, sha1recompress_fast_28, sha1recompress_fast_29,
-	sha1recompress_fast_30, sha1recompress_fast_31, sha1recompress_fast_32, sha1recompress_fast_33, sha1recompress_fast_34, sha1recompress_fast_35, sha1recompress_fast_36, sha1recompress_fast_37, sha1recompress_fast_38, sha1recompress_fast_39,
-	sha1recompress_fast_40, sha1recompress_fast_41, sha1recompress_fast_42, sha1recompress_fast_43, sha1recompress_fast_44, sha1recompress_fast_45, sha1recompress_fast_46, sha1recompress_fast_47, sha1recompress_fast_48, sha1recompress_fast_49,
-	sha1recompress_fast_50, sha1recompress_fast_51, sha1recompress_fast_52, sha1recompress_fast_53, sha1recompress_fast_54, sha1recompress_fast_55, sha1recompress_fast_56, sha1recompress_fast_57, sha1recompress_fast_58, sha1recompress_fast_59,
-	sha1recompress_fast_60, sha1recompress_fast_61, sha1recompress_fast_62, sha1recompress_fast_63, sha1recompress_fast_64, sha1recompress_fast_65, sha1recompress_fast_66, sha1recompress_fast_67, sha1recompress_fast_68, sha1recompress_fast_69,
-	sha1recompress_fast_70, sha1recompress_fast_71, sha1recompress_fast_72, sha1recompress_fast_73, sha1recompress_fast_74, sha1recompress_fast_75, sha1recompress_fast_76, sha1recompress_fast_77, sha1recompress_fast_78, sha1recompress_fast_79,
-};
-*/
+	switch (step)
+	{
+#ifdef DOSTORESTATE0
+	case 0:
+		sha1recompress_fast_0(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE1
+	case 1:
+		sha1recompress_fast_1(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE2
+	case 2:
+		sha1recompress_fast_2(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE3
+	case 3:
+		sha1recompress_fast_3(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE4
+	case 4:
+		sha1recompress_fast_4(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE5
+	case 5:
+		sha1recompress_fast_5(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE6
+	case 6:
+		sha1recompress_fast_6(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE7
+	case 7:
+		sha1recompress_fast_7(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE8
+	case 8:
+		sha1recompress_fast_8(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE9
+	case 9:
+		sha1recompress_fast_9(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE10
+	case 10:
+		sha1recompress_fast_10(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE11
+	case 11:
+		sha1recompress_fast_11(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE12
+	case 12:
+		sha1recompress_fast_12(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE13
+	case 13:
+		sha1recompress_fast_13(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE14
+	case 14:
+		sha1recompress_fast_14(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE15
+	case 15:
+		sha1recompress_fast_15(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE16
+	case 16:
+		sha1recompress_fast_16(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE17
+	case 17:
+		sha1recompress_fast_17(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE18
+	case 18:
+		sha1recompress_fast_18(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE19
+	case 19:
+		sha1recompress_fast_19(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE20
+	case 20:
+		sha1recompress_fast_20(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE21
+	case 21:
+		sha1recompress_fast_21(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE22
+	case 22:
+		sha1recompress_fast_22(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE23
+	case 23:
+		sha1recompress_fast_23(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE24
+	case 24:
+		sha1recompress_fast_24(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE25
+	case 25:
+		sha1recompress_fast_25(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE26
+	case 26:
+		sha1recompress_fast_26(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE27
+	case 27:
+		sha1recompress_fast_27(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE28
+	case 28:
+		sha1recompress_fast_28(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE29
+	case 29:
+		sha1recompress_fast_29(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE30
+	case 30:
+		sha1recompress_fast_30(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE31
+	case 31:
+		sha1recompress_fast_31(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE32
+	case 32:
+		sha1recompress_fast_32(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE33
+	case 33:
+		sha1recompress_fast_33(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE34
+	case 34:
+		sha1recompress_fast_34(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE35
+	case 35:
+		sha1recompress_fast_35(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE36
+	case 36:
+		sha1recompress_fast_36(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE37
+	case 37:
+		sha1recompress_fast_37(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE38
+	case 38:
+		sha1recompress_fast_38(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE39
+	case 39:
+		sha1recompress_fast_39(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE40
+	case 40:
+		sha1recompress_fast_40(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE41
+	case 41:
+		sha1recompress_fast_41(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE42
+	case 42:
+		sha1recompress_fast_42(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE43
+	case 43:
+		sha1recompress_fast_43(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE44
+	case 44:
+		sha1recompress_fast_44(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE45
+	case 45:
+		sha1recompress_fast_45(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE46
+	case 46:
+		sha1recompress_fast_46(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE47
+	case 47:
+		sha1recompress_fast_47(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE48
+	case 48:
+		sha1recompress_fast_48(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE49
+	case 49:
+		sha1recompress_fast_49(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE50
+	case 50:
+		sha1recompress_fast_50(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE51
+	case 51:
+		sha1recompress_fast_51(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE52
+	case 52:
+		sha1recompress_fast_52(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE53
+	case 53:
+		sha1recompress_fast_53(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE54
+	case 54:
+		sha1recompress_fast_54(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE55
+	case 55:
+		sha1recompress_fast_55(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE56
+	case 56:
+		sha1recompress_fast_56(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE57
+	case 57:
+		sha1recompress_fast_57(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE58
+	case 58:
+		sha1recompress_fast_58(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE59
+	case 59:
+		sha1recompress_fast_59(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE60
+	case 60:
+		sha1recompress_fast_60(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE61
+	case 61:
+		sha1recompress_fast_61(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE62
+	case 62:
+		sha1recompress_fast_62(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE63
+	case 63:
+		sha1recompress_fast_63(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE64
+	case 64:
+		sha1recompress_fast_64(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE65
+	case 65:
+		sha1recompress_fast_65(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE66
+	case 66:
+		sha1recompress_fast_66(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE67
+	case 67:
+		sha1recompress_fast_67(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE68
+	case 68:
+		sha1recompress_fast_68(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE69
+	case 69:
+		sha1recompress_fast_69(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE70
+	case 70:
+		sha1recompress_fast_70(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE71
+	case 71:
+		sha1recompress_fast_71(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE72
+	case 72:
+		sha1recompress_fast_72(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE73
+	case 73:
+		sha1recompress_fast_73(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE74
+	case 74:
+		sha1recompress_fast_74(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE75
+	case 75:
+		sha1recompress_fast_75(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE76
+	case 76:
+		sha1recompress_fast_76(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE77
+	case 77:
+		sha1recompress_fast_77(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE78
+	case 78:
+		sha1recompress_fast_78(ihvin, ihvout, me2, state);
+		break;
+#endif
+#ifdef DOSTORESTATE79
+	case 79:
+		sha1recompress_fast_79(ihvin, ihvout, me2, state);
+		break;
+#endif
+	default:
+		abort();
+	}
 
+}
 
 
 
@@ -988,10 +1610,6 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0xFFFFFFFF };
 	uint32_t ihvtmp[5];
 	
-	/*
-	for (i=0; i < DVMASKSIZE; ++i)
-		ubc_dv_mask[i]=0;
-	 */
 	ctx->ihv1[0] = ctx->ihv[0];
 	ctx->ihv1[1] = ctx->ihv[1];
 	ctx->ihv1[2] = ctx->ihv[2];
@@ -1016,18 +1634,8 @@ void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 					for (j = 0; j < 80; ++j)
 						ctx->m2[j] = ctx->m1[j] ^ sha1_dvs[i].dm[j];
 
-					/* (sha1_recompression_step[sha1_dvs[i].testt])(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]); */
-					switch (sha1_dvs[i].testt)
-					{
-					case 58:
-						sha1recompress_fast_58(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
-						break;
-					case 65:
-						sha1recompress_fast_65(ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
-						break;
-					default:
-						abort();
-					}
+					sha1_recompression_step(sha1_dvs[i].testt, ctx->ihv2, ihvtmp, ctx->m2, ctx->states[sha1_dvs[i].testt]);
+
 					/* to verify SHA-1 collision detection code with collisions for reduced-step SHA-1 */
 					if ((0 == ((ihvtmp[0] ^ ctx->ihv[0]) | (ihvtmp[1] ^ ctx->ihv[1]) | (ihvtmp[2] ^ ctx->ihv[2]) | (ihvtmp[3] ^ ctx->ihv[3]) | (ihvtmp[4] ^ ctx->ihv[4])))
 						|| (ctx->reduced_round_coll && 0==((ctx->ihv1[0] ^ ctx->ihv2[0]) | (ctx->ihv1[1] ^ ctx->ihv2[1]) | (ctx->ihv1[2] ^ ctx->ihv2[2]) | (ctx->ihv1[3] ^ ctx->ihv2[3]) | (ctx->ihv1[4] ^ ctx->ihv2[4]))))
