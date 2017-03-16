@@ -5,6 +5,10 @@
 * https://opensource.org/licenses/MIT
 ***/
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 /* uses SHA-1 message expansion to expand the first 16 words of W[] to 80 words */
@@ -16,7 +20,7 @@ void sha1_compression_W(uint32_t ihv[5], const uint32_t W[80]); */
 
 /* same as sha1_compression_W, but additionally store intermediate states */
 /* only stores states ii (the state between step ii-1 and step ii) when DOSTORESTATEii is defined in ubc_check.h */
-/* void sha1_compression_states(uint32_t ihv[5], const uint32_t W[80], uint32_t states[80][5]); */
+void sha1_compression_states(uint32_t[5], const uint32_t[16], uint32_t[80], uint32_t[80][5]);
 
 /*
 // function type for sha1_recompression_step_T (uint32_t ihvin[5], uint32_t ihvout[5], const uint32_t me2[80], const uint32_t state[5])
@@ -41,7 +45,6 @@ typedef struct {
 	uint64_t total;
 	uint32_t ihv[5];
 	unsigned char buffer[64];
-	int bigendian;
 	int found_collision;
 	int safe_hash;
 	int detect_coll;
@@ -80,7 +83,7 @@ void SHA1DCSetUseUBC(SHA1_CTX*, int);
 
 /* function to disable or enable the use of Collision Detection */
 /* enabled by default */
-void SHA1DCSetUseDetectColl(SHA1_CTX* ctx, int detect_coll);
+void SHA1DCSetUseDetectColl(SHA1_CTX*, int);
 
 /* function to disable or enable the detection of reduced-round SHA-1 collisions */
 /* disabled by default */
@@ -95,4 +98,8 @@ void SHA1DCUpdate(SHA1_CTX*, const char*, size_t);
 
 /* obtain SHA-1 hash from SHA-1 context */
 /* returns: 0 = no collision detected, otherwise = collision found => warn user for active attack */
-int  SHA1DCFinal(unsigned char[20], SHA1_CTX*);
+int  SHA1DCFinal(unsigned char[20], SHA1_CTX*); 
+
+#if defined(__cplusplus)
+}
+#endif

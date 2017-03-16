@@ -23,6 +23,10 @@
 #ifndef UBC_CHECK_H
 #define UBC_CHECK_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #define DVMASKSIZE 1
@@ -33,5 +37,10 @@ void ubc_check(const uint32_t W[80], uint32_t dvmask[DVMASKSIZE]);
 #define DOSTORESTATE58
 #define DOSTORESTATE65
 
+#define CHECK_DVMASK(_DVMASK) (0 != _DVMASK[0])
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* UBC_CHECK_H */

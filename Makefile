@@ -13,7 +13,7 @@
 # 3. If any interfaces have been added since the last public release, then increment age.
 # 4. If any interfaces have been removed or changed since the last public release,
 #    then set age to 0.
-LIBCOMPAT=0:0:0
+LIBCOMPAT=1:0:0
 
 PREFIX ?= /usr/local
 BINDIR=$(PREFIX)/bin
@@ -66,6 +66,7 @@ SRC_DIR=src
 SRC_DEP_DIR=dep_src
 SRC_OBJ_DIR=obj_src
 
+H_DEP:=$(shell find . -type f -name "*.h")
 FS_LIB=$(wildcard $(LIB_DIR)/*.c)
 FS_SRC=$(wildcard $(SRC_DIR)/*.c)
 FS_OBJ_LIB=$(FS_LIB:$(LIB_DIR)/%.c=$(LIB_OBJ_DIR)/%.lo)
@@ -108,6 +109,13 @@ clean:
 
 .PHONY: test
 test: tools
+	test e98a60b463a6868a6ce351ab0166c0af0c8c4721 != `bin/sha1dcsum test/sha1_reducedsha_coll.bin | cut -d' ' -f1` || (echo "\nError: Compiled for incorrect endianness" && false)
+	test a56374e1cf4c3746499bc7c0acb39498ad2ee185 = `bin/sha1dcsum test/sha1_reducedsha_coll.bin | cut -d' ' -f1`
+	test 16e96b70000dd1e7c85b8368ee197754400e58ec = `bin/sha1dcsum test/shattered-1.pdf | cut -d' ' -f1`
+	test e1761773e6a35916d99f891b77663e6405313587 = `bin/sha1dcsum test/shattered-2.pdf | cut -d' ' -f1`
+	test dd39885a2a5d8f59030b451e00cb45da9f9d3828 = `bin/sha1dcsum_partialcoll test/sha1_reducedsha_coll.bin | cut -d' ' -f1` 
+	test d3a1d09969c3b57113fd17b23e01dd3de74a99bb = `bin/sha1dcsum_partialcoll test/shattered-1.pdf | cut -d' ' -f1`
+	test 92246b0b718f4c704d37bb025717cbc66babf102 = `bin/sha1dcsum_partialcoll test/shattered-2.pdf | cut -d' ' -f1`
 	bin/sha1dcsum test/*
 	bin/sha1dcsum_partialcoll test/*
 	
@@ -143,14 +151,14 @@ bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 $(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
 	$(MKDIR) $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
-$(SRC_OBJ_DIR)/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d
+$(SRC_OBJ_DIR)/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d $(H_DEP)
 	$(MKDIR) $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 
 $(LIB_DEP_DIR)/%.d: $(LIB_DIR)/%.c
 	$(MKDIR) $(shell dirname $@) && $(CC_DEP) $(CFLAGS) -M -MF $@ $<
 
-$(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d
+$(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d $(H_DEP)
 	$(MKDIR) $(shell dirname $@) && $(CC) $(CFLAGS) -o $@ -c $<
 
 -include $(FS_DEP)
