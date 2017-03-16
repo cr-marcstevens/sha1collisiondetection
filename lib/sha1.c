@@ -1604,7 +1604,7 @@ static void sha1_recompression_step(uint32_t step, uint32_t ihvin[5], uint32_t i
 
 
 
-void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
+static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 {
 	unsigned i, j;
 	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0xFFFFFFFF };

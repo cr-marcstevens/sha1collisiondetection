@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 	char buffer[65536];
 	size_t size;
 	SHA1_CTX ctx2;
-	int i,j;
+	int i,j,foundcollision;
 
 	if (argc < 2)
 	{
@@ -62,14 +62,14 @@ int main(int argc, char** argv)
 			return 1;
 		}
 
-		SHA1DCFinal(hash2,&ctx2);
+		foundcollision = SHA1DCFinal(hash2,&ctx2);
 
 		for (j = 0; j < 20; ++j)
 		{
 			sprintf(buffer+(j*2), "%02x", hash2[j]);
 		}
 		buffer[20*2] = 0;
-		if (ctx2.found_collision)
+		if (foundcollision)
 		{
 			printf("%s *coll* %s\n", buffer, argv[i]);
 		}
