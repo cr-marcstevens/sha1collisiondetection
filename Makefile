@@ -13,7 +13,7 @@
 # 3. If any interfaces have been added since the last public release, then increment age.
 # 4. If any interfaces have been removed or changed since the last public release,
 #    then set age to 0.
-LIBCOMPAT=0:1:0
+LIBCOMPAT=1:0:0
 
 PREFIX ?= /usr/local
 BINDIR=$(PREFIX)/bin
