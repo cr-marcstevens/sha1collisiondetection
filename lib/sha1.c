@@ -40,9 +40,9 @@
 #define sha1_mix(W, t)  (rotate_left(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1))
 
 #if defined(BIGENDIAN)
-	#define sha1_load(m, t) (m[t])
+	#define sha1_load(m, t, temp)  { temp = m[t]; }
 #else
-	#define sha1_load(m, t, temp)	{ temp = m[t]; sha1_bswap32(temp); }
+	#define sha1_load(m, t, temp)  { temp = m[t]; sha1_bswap32(temp); }
 #endif /*define(BIGENDIAN)*/
 
 #define sha1_store(W, t, x)	*(volatile uint32_t *)&W[t] = x
