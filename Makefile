@@ -109,7 +109,7 @@ clean:
 
 .PHONY: test
 test: tools
-	(test e98a60b463a6868a6ce351ab0166c0af0c8c4721 = `bin/sha1dcsum test/sha1_reducedsha_coll.bin | cut -d' ' -f1` && echo "\nError: Compiled for incorrect endianness" && false) || true
+	test e98a60b463a6868a6ce351ab0166c0af0c8c4721 != `bin/sha1dcsum test/sha1_reducedsha_coll.bin | cut -d' ' -f1` || (echo "\nError: Compiled for incorrect endianness" && false)
 	test a56374e1cf4c3746499bc7c0acb39498ad2ee185 = `bin/sha1dcsum test/sha1_reducedsha_coll.bin | cut -d' ' -f1`
 	test 16e96b70000dd1e7c85b8368ee197754400e58ec = `bin/sha1dcsum test/shattered-1.pdf | cut -d' ' -f1`
 	test e1761773e6a35916d99f891b77663e6405313587 = `bin/sha1dcsum test/shattered-2.pdf | cut -d' ' -f1`
