@@ -5,6 +5,9 @@
 * https://opensource.org/licenses/MIT
 ***/
 
+#ifndef SHA1DC_SHA1_H
+#define SHA1DC_SHA1_H
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -102,4 +105,6 @@ int  SHA1DCFinal(unsigned char[20], SHA1_CTX*);
 
 #if defined(__cplusplus)
 }
+#endif
+
 #endif
