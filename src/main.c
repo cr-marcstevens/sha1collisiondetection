@@ -8,9 +8,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <libgen.h>
+#endif
 
 #include "sha1.h"
+
+#ifdef _WIN32
+char* basename(char* path)
+{
+    char *base = NULL, *cur = NULL;
+
+    base = path;
+    cur = path;
+    while (0 != *cur)
+    {
+        if ('\\' == *cur)
+        {
+            base = cur + 1;
+        }
+        cur++;
+    }
+
+    return base;
+}
+#endif
 
 int main(int argc, char** argv)
 {
