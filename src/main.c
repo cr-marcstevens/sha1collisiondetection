@@ -104,3 +104,7 @@ int main(int argc, char** argv)
 	}
 	return 0;
 }
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4710 )    /* 4710 -- compiler complains about printf,sprintf not being inlined. */
+#endif

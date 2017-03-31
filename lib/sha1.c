@@ -876,6 +876,11 @@ static void sha1recompress_fast_ ## t (uint32_t ihvin[5], uint32_t ihvout[5], co
 	ihvout[0] = ihvin[0] + a; ihvout[1] = ihvin[1] + b; ihvout[2] = ihvin[2] + c; ihvout[3] = ihvin[3] + d; ihvout[4] = ihvin[4] + e; \
 }
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4127)  /* Complier complains about the checks in the above macro being constant. */
+#endif
+
 #ifdef DOSTORESTATE0
 SHA1_RECOMPRESS(0)
 #endif
@@ -1194,6 +1199,10 @@ SHA1_RECOMPRESS(78)
 
 #ifdef DOSTORESTATE79
 SHA1_RECOMPRESS(79)
+#endif
+
+#ifdef _MSC_VER
+#pragma warning(pop)
 #endif
 
 static void sha1_recompression_step(uint32_t step, uint32_t ihvin[5], uint32_t ihvout[5], const uint32_t me2[80], const uint32_t state[5])
