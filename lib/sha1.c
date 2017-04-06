@@ -1646,6 +1646,15 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 					{
 						ctx->found_collision = 1;
 
+						if (ctx->callback != NULL)
+						{
+							#ifdef SHA1DC_CALLBACK_USES_PARAM
+								ctx->callback(ctx->callback_param, ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2);
+							#else
+								ctx->callback(ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2);
+							#endif
+						}
+
 						if (ctx->safe_hash)
 						{
 							sha1_compression_W(ctx->ihv, ctx->m1);
@@ -1674,6 +1683,9 @@ void SHA1DC_API SHA1DCInit(SHA1_CTX* ctx)
 	ctx->detect_coll = 1;
 	ctx->reduced_round_coll = 0;
 	ctx->callback = NULL;
+#ifdef SHA1DC_CALLBACK_USES_PARAM
+	ctx->callback_param = NULL;
+#endif
 }
 
 void SHA1DC_API SHA1DCSetSafeHash(SHA1_CTX* ctx, int safehash)
