@@ -8,6 +8,12 @@
 #ifndef SHA1DC_SHA1_H
 #define SHA1DC_SHA1_H
 
+#ifdef _MSC_VER
+#define SHA1DC_API __cdecl
+#else
+#define SHA1DC_API
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -40,8 +46,18 @@ typedef void(*sha1_recompression_type)(uint32_t*, uint32_t*, const uint32_t*, co
 /* extern sha1_recompression_type sha1_recompression_step[80];*/
 
 /* a callback function type that can be set to be called when a collision block has been found: */
-/* void collision_block_callback(uint64_t byteoffset, const uint32_t ihvin1[5], const uint32_t ihvin2[5], const uint32_t m1[80], const uint32_t m2[80]) */
-typedef void(*collision_block_callback)(uint64_t, const uint32_t*, const uint32_t*, const uint32_t*, const uint32_t*);
+
+#ifdef SHA1DC_CALLBACK_USES_PARAM
+
+    // void collision_block_callback(void* param, uint64_t byteoffset, const uint32_t ihvin1[5], const uint32_t ihvin2[5], const uint32_t m1[80], const uint32_t m2[80])
+    typedef void(SHA1DC_API * collision_block_callback)(void* param, uint64_t, const uint32_t*, const uint32_t*, const uint32_t*, const uint32_t*);
+
+#else
+
+    // void collision_block_callback(uint64_t byteoffset, const uint32_t ihvin1[5], const uint32_t ihvin2[5], const uint32_t m1[80], const uint32_t m2[80])
+    typedef void(SHA1DC_API * collision_block_callback)(uint64_t, const uint32_t*, const uint32_t*, const uint32_t*, const uint32_t*);
+
+#endif
 
 /* the SHA-1 context */
 typedef struct {
@@ -54,7 +70,9 @@ typedef struct {
 	int ubc_check;
 	int reduced_round_coll;
 	collision_block_callback callback;
-
+#ifdef SHA1DC_CALLBACK_USES_PARAM
+	void* callback_param;
+#endif
 	uint32_t ihv1[5];
 	uint32_t ihv2[5];
 	uint32_t m1[80];
@@ -63,7 +81,7 @@ typedef struct {
 } SHA1_CTX;
 
 /* initialize SHA-1 context */
-void SHA1DCInit(SHA1_CTX*);
+void SHA1DC_API SHA1DCInit(SHA1_CTX*);
 
 /*
 // function to enable safe SHA-1 hashing:
@@ -78,30 +96,35 @@ void SHA1DCInit(SHA1_CTX*);
 // this will automatically invalidate SHA-1 based digital signature forgeries
 // enabled by default
 */
-void SHA1DCSetSafeHash(SHA1_CTX*, int);
+void SHA1DC_API SHA1DCSetSafeHash(SHA1_CTX*, int);
 
 /* function to disable or enable the use of Unavoidable Bitconditions (provides a significant speed up) */
 /* enabled by default */
-void SHA1DCSetUseUBC(SHA1_CTX*, int);
+void SHA1DC_API SHA1DCSetUseUBC(SHA1_CTX*, int);
 
 /* function to disable or enable the use of Collision Detection */
 /* enabled by default */
-void SHA1DCSetUseDetectColl(SHA1_CTX*, int);
+void SHA1DC_API SHA1DCSetUseDetectColl(SHA1_CTX*, int);
 
 /* function to disable or enable the detection of reduced-round SHA-1 collisions */
 /* disabled by default */
-void SHA1DCSetDetectReducedRoundCollision(SHA1_CTX*, int);
+void SHA1DC_API SHA1DCSetDetectReducedRoundCollision(SHA1_CTX*, int);
 
 /* function to set a callback function, pass NULL to disable */
 /* by default no callback set */
-void SHA1DCSetCallback(SHA1_CTX*, collision_block_callback);
+
+#ifdef SHA1DC_CALLBACK_USES_PARAM
+void SHA1DC_API SHA1DCSetCallback(SHA1_CTX*, collision_block_callback, void*);
+#else
+void SHA1DC_API SHA1DCSetCallback(SHA1_CTX*, collision_block_callback);
+#endif
 
 /* update SHA-1 context with buffer contents */
-void SHA1DCUpdate(SHA1_CTX*, const char*, size_t);
+void SHA1DC_API SHA1DCUpdate(SHA1_CTX*, const char*, size_t);
 
 /* obtain SHA-1 hash from SHA-1 context */
 /* returns: 0 = no collision detected, otherwise = collision found => warn user for active attack */
-int  SHA1DCFinal(unsigned char[20], SHA1_CTX*); 
+int SHA1DC_API SHA1DCFinal(unsigned char[20], SHA1_CTX*); 
 
 #if defined(__cplusplus)
 }
