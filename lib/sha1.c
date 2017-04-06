@@ -1646,6 +1646,15 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 					{
 						ctx->found_collision = 1;
 
+						if (ctx->callback != NULL)
+						{
+							#ifdef SHA1DC_CALLBACK_USES_PARAM
+								ctx->callback(ctx->callback_param, ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2);
+							#else
+								ctx->callback(ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2);
+							#endif
+						}
+
 						if (ctx->safe_hash)
 						{
 							sha1_compression_W(ctx->ihv, ctx->m1);
@@ -1660,7 +1669,7 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	}
 }
 
-void SHA1DCInit(SHA1_CTX* ctx)
+void SHA1DC_API SHA1DCInit(SHA1_CTX* ctx)
 {
 	ctx->total = 0;
 	ctx->ihv[0] = 0x67452301;
@@ -1674,9 +1683,12 @@ void SHA1DCInit(SHA1_CTX* ctx)
 	ctx->detect_coll = 1;
 	ctx->reduced_round_coll = 0;
 	ctx->callback = NULL;
+#ifdef SHA1DC_CALLBACK_USES_PARAM
+	ctx->callback_param = NULL;
+#endif
 }
 
-void SHA1DCSetSafeHash(SHA1_CTX* ctx, int safehash)
+void SHA1DC_API SHA1DCSetSafeHash(SHA1_CTX* ctx, int safehash)
 {
 	if (safehash)
 		ctx->safe_hash = 1;
@@ -1685,7 +1697,7 @@ void SHA1DCSetSafeHash(SHA1_CTX* ctx, int safehash)
 }
 
 
-void SHA1DCSetUseUBC(SHA1_CTX* ctx, int ubc_check)
+void SHA1DC_API SHA1DCSetUseUBC(SHA1_CTX* ctx, int ubc_check)
 {
 	if (ubc_check)
 		ctx->ubc_check = 1;
@@ -1693,7 +1705,7 @@ void SHA1DCSetUseUBC(SHA1_CTX* ctx, int ubc_check)
 		ctx->ubc_check = 0;
 }
 
-void SHA1DCSetUseDetectColl(SHA1_CTX* ctx, int detect_coll)
+void SHA1DC_API SHA1DCSetUseDetectColl(SHA1_CTX* ctx, int detect_coll)
 {
 	if (detect_coll)
 		ctx->detect_coll = 1;
@@ -1701,7 +1713,7 @@ void SHA1DCSetUseDetectColl(SHA1_CTX* ctx, int detect_coll)
 		ctx->detect_coll = 0;
 }
 
-void SHA1DCSetDetectReducedRoundCollision(SHA1_CTX* ctx, int reduced_round_coll)
+void SHA1DC_API SHA1DCSetDetectReducedRoundCollision(SHA1_CTX* ctx, int reduced_round_coll)
 {
 	if (reduced_round_coll)
 		ctx->reduced_round_coll = 1;
@@ -1709,12 +1721,24 @@ void SHA1DCSetDetectReducedRoundCollision(SHA1_CTX* ctx, int reduced_round_coll)
 		ctx->reduced_round_coll = 0;
 }
 
-void SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback)
-{
-	ctx->callback = callback;
-}
+#ifdef SHA1DC_CALLBACK_USES_PARAM
 
-void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
+	void SHA1DC_API SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback, void* param)
+	{
+		ctx->callback = callback;
+		ctx->callback_param = param;
+	}
+
+#else
+
+	void SHA1DC_API SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback)
+	{
+		ctx->callback = callback;
+	}
+
+#endif
+
+void SHA1DC_API SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 {
 	unsigned left, fill;
 	if (len == 0)
@@ -1754,43 +1778,50 @@ static const unsigned char sha1_padding[64] =
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-int SHA1DCFinal(unsigned char output[20], SHA1_CTX *ctx)
+int SHA1DC_API SHA1DCFinal(unsigned char output[20], SHA1_CTX *ctx)
 {
-	uint32_t last = ctx->total & 63;
+	SHA1_CTX context = *ctx; // Make a copy
+
+	uint32_t last = context.total & 63;
 	uint32_t padn = (last < 56) ? (56 - last) : (120 - last);
 	uint64_t total;
-	SHA1DCUpdate(ctx, (const char*)(sha1_padding), padn);
 
-	total = ctx->total - padn;
+	SHA1DCUpdate(&context, (const char*)(sha1_padding), padn);
+
+	total = context.total - padn;
 	total <<= 3;
-	ctx->buffer[56] = (unsigned char)(total >> 56);
-	ctx->buffer[57] = (unsigned char)(total >> 48);
-	ctx->buffer[58] = (unsigned char)(total >> 40);
-	ctx->buffer[59] = (unsigned char)(total >> 32);
-	ctx->buffer[60] = (unsigned char)(total >> 24);
-	ctx->buffer[61] = (unsigned char)(total >> 16);
-	ctx->buffer[62] = (unsigned char)(total >> 8);
-	ctx->buffer[63] = (unsigned char)(total);
-	sha1_process(ctx, (uint32_t*)(ctx->buffer));
-	output[0] = (unsigned char)(ctx->ihv[0] >> 24);
-	output[1] = (unsigned char)(ctx->ihv[0] >> 16);
-	output[2] = (unsigned char)(ctx->ihv[0] >> 8);
-	output[3] = (unsigned char)(ctx->ihv[0]);
-	output[4] = (unsigned char)(ctx->ihv[1] >> 24);
-	output[5] = (unsigned char)(ctx->ihv[1] >> 16);
-	output[6] = (unsigned char)(ctx->ihv[1] >> 8);
-	output[7] = (unsigned char)(ctx->ihv[1]);
-	output[8] = (unsigned char)(ctx->ihv[2] >> 24);
-	output[9] = (unsigned char)(ctx->ihv[2] >> 16);
-	output[10] = (unsigned char)(ctx->ihv[2] >> 8);
-	output[11] = (unsigned char)(ctx->ihv[2]);
-	output[12] = (unsigned char)(ctx->ihv[3] >> 24);
-	output[13] = (unsigned char)(ctx->ihv[3] >> 16);
-	output[14] = (unsigned char)(ctx->ihv[3] >> 8);
-	output[15] = (unsigned char)(ctx->ihv[3]);
-	output[16] = (unsigned char)(ctx->ihv[4] >> 24);
-	output[17] = (unsigned char)(ctx->ihv[4] >> 16);
-	output[18] = (unsigned char)(ctx->ihv[4] >> 8);
-	output[19] = (unsigned char)(ctx->ihv[4]);
-	return ctx->found_collision;
+
+	context.buffer[56] = (unsigned char)(total >> 56);
+	context.buffer[57] = (unsigned char)(total >> 48);
+	context.buffer[58] = (unsigned char)(total >> 40);
+	context.buffer[59] = (unsigned char)(total >> 32);
+	context.buffer[60] = (unsigned char)(total >> 24);
+	context.buffer[61] = (unsigned char)(total >> 16);
+	context.buffer[62] = (unsigned char)(total >> 8);
+	context.buffer[63] = (unsigned char)(total);
+
+	sha1_process(&context, (uint32_t*)(context.buffer));
+
+	output[0] = (unsigned char)(context.ihv[0] >> 24);
+	output[1] = (unsigned char)(context.ihv[0] >> 16);
+	output[2] = (unsigned char)(context.ihv[0] >> 8);
+	output[3] = (unsigned char)(context.ihv[0]);
+	output[4] = (unsigned char)(context.ihv[1] >> 24);
+	output[5] = (unsigned char)(context.ihv[1] >> 16);
+	output[6] = (unsigned char)(context.ihv[1] >> 8);
+	output[7] = (unsigned char)(context.ihv[1]);
+	output[8] = (unsigned char)(context.ihv[2] >> 24);
+	output[9] = (unsigned char)(context.ihv[2] >> 16);
+	output[10] = (unsigned char)(context.ihv[2] >> 8);
+	output[11] = (unsigned char)(context.ihv[2]);
+	output[12] = (unsigned char)(context.ihv[3] >> 24);
+	output[13] = (unsigned char)(context.ihv[3] >> 16);
+	output[14] = (unsigned char)(context.ihv[3] >> 8);
+	output[15] = (unsigned char)(context.ihv[3]);
+	output[16] = (unsigned char)(context.ihv[4] >> 24);
+	output[17] = (unsigned char)(context.ihv[4] >> 16);
+	output[18] = (unsigned char)(context.ihv[4] >> 8);
+	output[19] = (unsigned char)(context.ihv[4]);
+
+	return context.found_collision;
 }
