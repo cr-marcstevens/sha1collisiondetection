@@ -74,6 +74,15 @@ else
 SIMDCONFIG+= -DNO_HAVE_AVX
 endif
 
+ifeq ($(HAVEAVX512),1)
+CC=gcc-6.2
+AVXFLAGS=-march=native
+SIMDCONFIG+= -DHAVE_AVX512
+FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_avx512.c)
+else
+SIMDCONFIG+= -DNO_HAVE_AVX
+endif
+
 ifeq ($(HAVENEON),1)
 NEONFLAGS=-mfpu=neon
 SIMDCONFIG+= -DHAVE_NEON
@@ -177,6 +186,9 @@ ${LIB_DEP_DIR}/%sse128.d: ${LIB_DIR}/%sse128.c
 
 ${LIB_DEP_DIR}/%avx256.d: ${LIB_DIR}/%avx256.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(AVXFLAGS) -M -MF $@ $<
+	
+${LIB_DEP_DIR}/%avx512.d: ${LIB_DIR}/%avx512.c
+	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(AVXFLAGS) -M -MF $@ $<
 
 ${LIB_DEP_DIR}/%neon128.d: ${LIB_DIR}/%neon128.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(NEONFLAGS) -M -MF $@ $<
@@ -193,6 +205,9 @@ ${LIB_OBJ_DIR}/%sse128.lo ${LIB_OBJ_DIR}/%sse128.o: ${LIB_DIR}/%sse128.c ${LIB_D
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(SSEFLAGS) -o $@ -c $<
 
 ${LIB_OBJ_DIR}/%avx256.lo ${LIB_OBJ_DIR}/%avx256.o: ${LIB_DIR}/%avx256.c ${LIB_DEP_DIR}/%avx256.d
+	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(AVXFLAGS) -o $@ -c $<
+	
+${LIB_OBJ_DIR}/%avx512.lo ${LIB_OBJ_DIR}/%avx512.o: ${LIB_DIR}/%avx512.c ${LIB_DEP_DIR}/%avx512.d
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(AVXFLAGS) -o $@ -c $<
 
 ${LIB_OBJ_DIR}/%neon128.lo ${LIB_OBJ_DIR}/%neon128.o: ${LIB_DIR}/%neon128.c ${LIB_DEP_DIR}/%neon128.d
