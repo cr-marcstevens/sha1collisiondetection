@@ -5,7 +5,7 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-// this file generates avx256 code using avx512 MACROS (simd_avx512.h) and generic SIMD code (ubc_check_simd.cinc)
+// this file generates avx512 code using avx512 MACROS (simd_avx512.h) and generic SIMD code (ubc_check_simd.cinc)
 #ifdef HAVE_AVX512
 #include "ubc_check.h"
 #include "simd_avx512.h"
