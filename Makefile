@@ -80,7 +80,7 @@ AVXFLAGS=-march=native
 SIMDCONFIG+= -DHAVE_AVX512
 FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_avx512.c)
 else
-SIMDCONFIG+= -DNO_HAVE_AVX
+SIMDCONFIG+= -DNO_HAVE_AVX512
 endif
 
 ifeq ($(HAVENEON),1)
