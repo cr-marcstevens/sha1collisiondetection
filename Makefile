@@ -151,7 +151,7 @@ avx512main:
 	cd src; gcc-6.2 -DHAVE_AVX512 -Wall -pedantic -O3 -I../lib -march=native -c *.c
 avx512: avx512lib avx512main
 	cd bin; gcc-6.2 -Wall -pedantic -O3 ../lib/*.o ../src/*.o -o sha1dcsum
-	-ln -s sha1dcsum bin/sha1dcsum_partialcoll
+	ln -s sha1dcsum bin/sha1dcsum_partialcoll
 
 
 .PHONY: test
