@@ -80,7 +80,7 @@ AVXFLAGS=-march=native
 SIMDCONFIG+= -DHAVE_AVX512
 FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_avx512.c)
 else
-SIMDCONFIG+= -DNO_HAVE_AVX512
+SIMDCONFIG+= -DNO_HAVE_AVX
 endif
 
 ifeq ($(HAVENEON),1)
@@ -142,6 +142,17 @@ clean::
 	-find . -type f -name '*.so' -print -delete
 	-find . -type d -name '.libs' -print | xargs rm -rv
 	-rm -rf bin
+
+#temporary rules for avx512 since libtool on knl/gcc-6.2 seems broken
+.PHONY: avx512lib avx512main avx512
+avx512lib:
+	cd lib; gcc-6.2 -DHAVE_AVX512 -Wall -pedantic -O3 -march=native -c *.c
+avx512main:
+	cd src; gcc-6.2 -DHAVE_AVX512 -Wall -pedantic -O3 -I../lib -march=native -c *.c
+avx512: avx512lib avx512main
+	cd bin; gcc-6.2 -Wall -pedantic -O3 ../lib/*.o ../src/*.o -o sha1dcsum
+	-ln -s sha1dcsum bin/sha1dcsum_partialcoll
+
 
 .PHONY: test
 test: tools
