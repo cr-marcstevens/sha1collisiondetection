@@ -60,7 +60,11 @@ int main(int argc, char** argv)
 			SHA1DCSetDetectReducedRoundCollision(&ctx2, 1);
 		}
 
-		fd = fopen(argv[i], "rb");
+		if(!strcmp(argv[i],"-")) {
+			fd = stdin;
+		} else {
+			fd = fopen(argv[i], "rb");
+		}
 		if (fd == NULL)
 		{
 			fprintf(stderr, "cannot open file: %s: %s\n", argv[i], strerror(errno));

@@ -51,6 +51,7 @@ Examples:
 ```
 bin/sha1dcsum test/sha1_reducedsha_coll.bin test/shattered-1.pdf
 bin/sha1dcsum_partialcoll test/sha1reducedsha_coll.bin test/shattered-1.pdf
+pipe_data | bin/sha1dcsum -
 ```
 
 ## Library usage
