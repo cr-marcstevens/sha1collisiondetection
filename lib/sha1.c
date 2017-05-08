@@ -5,14 +5,14 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-#include <string.h>
-#include <memory.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "sha1.h"
 #include "ubc_check.h"
 
+#include <string.h>
+#include <memory.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* 
    Because Little-Endian architectures are most common,
