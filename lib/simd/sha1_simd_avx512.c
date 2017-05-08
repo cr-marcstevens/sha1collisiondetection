@@ -26,4 +26,4 @@
 
 #pragma message "The file: sha1_simd_avx512.c is not compiled for this architecture."
 
-#endif /*SHA1DC_HAVE_AVX512*/
+#endif /* SHA1DC_HAVE_AVX512 */
