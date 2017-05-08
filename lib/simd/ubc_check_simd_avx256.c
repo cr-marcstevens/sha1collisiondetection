@@ -6,6 +6,7 @@
 ***/
 
 /* this file generates avx256 code using avx256 MACROS (simd_avx256.h) and generic SIMD code (ubc_check_simd.cinc) */
+#include "simd_config.h"
 #ifdef SHA1DC_HAVE_AVX256
 #include "ubc_check.h"
 #include "simd_avx256.h"

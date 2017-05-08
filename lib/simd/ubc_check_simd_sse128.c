@@ -6,6 +6,7 @@
 ***/
 
 /* this file generates sse128 code using sse128 MACROS (simd_sse128.h) and generic SIMD code (ubc_check_simd.cinc) */
+#include "simd_config.h"
 #ifdef SHA1DC_HAVE_SSE
 #include "ubc_check.h"
 #include "simd_sse128.h"

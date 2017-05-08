@@ -9,6 +9,7 @@
  * this header defines SIMD MACROS for avx256 intrinsics
  * used to generate avx256 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc)
  */
+
 #ifndef SIMD_AVX256_HEADER
 #define SIMD_AVX256_HEADER
 #ifdef SHA1DC_HAVE_AVX256

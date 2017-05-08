@@ -6,8 +6,8 @@
 ***/
 
 /*
- * this header defines SIMD MACROS for sse128 intrinsics
- * used to generate sse128 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc)
+ * this header defines SIMD MACROS for neon128 intrinsics
+ * used to generate neon128 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc)
  */
 
 #ifndef SIMD_NEON128_HEADER
