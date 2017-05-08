@@ -34,19 +34,20 @@
 
 void SHA1_MESSAGE_EXPANSION_SIMD(SIMD_WORD* W)
 {
-	for (unsigned i = 16; i < 80; ++i)
+	unsigned i;
+	for (i = 16; i < 80; ++i)
 		W[i] = SIMD_ROL_V(SIMD_XOR_VV( SIMD_XOR_VV(W[i - 3],W[i - 8]),SIMD_XOR_VV(W[i - 14],W[i - 16]) ), 1);
 }
 
 void SHA1_COMPRESSION_SIMD(SIMD_WORD* ihv, const SIMD_WORD* m)
 {
+	unsigned i;
 	SIMD_WORD W[80];
+	SIMD_WORD a = ihv[0], b = ihv[1], c = ihv[2], d = ihv[3], e = ihv[4];
 
 	memcpy(W, m, 16 * sizeof(SIMD_WORD));
-	for (unsigned i = 16; i < 80; ++i)
+	for (i = 16; i < 80; ++i)
 		W[i] = SIMD_ROL_V(SIMD_XOR_VV( SIMD_XOR_VV(W[i - 3],W[i - 8]),SIMD_XOR_VV(W[i - 14],W[i - 16]) ), 1);
-
-	SIMD_WORD a = ihv[0], b = ihv[1], c = ihv[2], d = ihv[3], e = ihv[4];
 
 	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(a, b, c, d, e, W, 0);
 	HASHCLASH_SHA1COMPRESS_ROUND1_STEP(e, a, b, c, d, W, 1);
