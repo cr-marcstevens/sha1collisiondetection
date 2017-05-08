@@ -8,9 +8,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <libgen.h>
+#endif
 
 #include "sha1.h"
+
+#ifdef _WIN32
+char* basename(char* path)
+{
+    char *base = NULL, *cur = NULL;
+
+    base = path;
+    cur = path;
+    while (0 != *cur)
+    {
+        if ('\\' == *cur)
+        {
+            base = cur + 1;
+        }
+        cur++;
+    }
+
+    return base;
+}
+#endif
 
 int main(int argc, char** argv)
 {
@@ -19,7 +41,7 @@ int main(int argc, char** argv)
 	char buffer[65536];
 	size_t size;
 	SHA1_CTX ctx2;
-	int i,j;
+	int i,j,foundcollision;
 
 	if (argc < 2)
 	{
@@ -29,16 +51,14 @@ int main(int argc, char** argv)
 
 	for (i=1; i < argc; ++i)
 	{
-		// initialize SHA-1 context
 		SHA1DCInit(&ctx2);
 
-		// if the program name includes the word 'partial' then also test for reduced-round SHA-1 collisions
+		/* if the program name includes the word 'partial' then also test for reduced-round SHA-1 collisions */
 		if (NULL != strstr(argv[0], "partial"))
 		{
 			SHA1DCSetDetectReducedRoundCollision(&ctx2, 1);
 		}
 
-		// open file
 		fd = fopen(argv[i], "rb");
 		if (fd == NULL)
 		{
@@ -46,7 +66,6 @@ int main(int argc, char** argv)
 			return 1;
 		}
 
-		// feed file through SHA-1 update function
 		while (1)
 		{
 			size=fread(buffer,1,65536,fd);
@@ -65,14 +84,14 @@ int main(int argc, char** argv)
 			return 1;
 		}
 
-		// obtain SHA-1 and print it
-		SHA1DCFinal(hash2,&ctx2);
+		foundcollision = SHA1DCFinal(hash2,&ctx2);
+
 		for (j = 0; j < 20; ++j)
 		{
 			sprintf(buffer+(j*2), "%02x", hash2[j]);
 		}
 		buffer[20*2] = 0;
-		if (ctx2.found_collision)
+		if (foundcollision)
 		{
 			printf("%s *coll* %s\n", buffer, argv[i]);
 		}
@@ -83,4 +102,9 @@ int main(int argc, char** argv)
 
 		fclose(fd);
 	}
+	return 0;
 }
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4710 )    /* 4710 -- compiler complains about printf,sprintf not being inlined. */
+#endif
