@@ -5,9 +5,9 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-// this file generates avx512 code using avx512 MACROS (simd_avx512.h) and generic SIMD code (sha1_simd.cinc)
+/* this file generates avx512 code using avx512 MACROS (simd_avx512.h) and generic SIMD code (sha1_simd.cinc) */
 
-#ifdef HAVE_AVX512
+#ifdef SHA1DC_HAVE_AVX512
 #include "sha1.h"
 
 #include "simd_avx512.h"
@@ -25,4 +25,4 @@
 
 #pragma message "The file: sha1_simd_avx512.c is not compiled for this architecture."
 
-#endif //HAVE_AVX512
+#endif /*SHA1DC_HAVE_AVX512*/

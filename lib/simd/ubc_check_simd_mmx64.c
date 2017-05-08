@@ -5,8 +5,8 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-// this file generates sse128 code using sse128 MACROS (simd_sse128.h) and generic SIMD code (ubc_check_simd.cinc)
-#ifdef HAVE_MMX
+/* this file generates sse128 code using sse128 MACROS (simd_sse128.h) and generic SIMD code (ubc_check_simd.cinc) */
+#ifdef SHA1DC_HAVE_MMX64
 #include "ubc_check.h"
 #include "simd_mmx64.h"
 
@@ -18,4 +18,4 @@
 
 #pragma message "The file: ubc_check_simd_mmx64.c is not compiled for this architecture."
 
-#endif //HAVE_MMX
+#endif /* SHA1DC_HAVE_MMX64 */

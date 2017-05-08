@@ -5,8 +5,8 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-// this file generates sse128 code using sse128 MACROS (simd_sse128.h) and generic SIMD code (sha1_simd.cinc)
-#ifdef HAVE_SSE
+/* this file generates sse128 code using sse128 MACROS (simd_sse128.h) and generic SIMD code (sha1_simd.cinc) */
+#ifdef SHA1DC_HAVE_SSE128
 #include "sha1.h"
 
 #include "simd_sse128.h"
@@ -24,4 +24,4 @@
 
 #pragma message "The file: sha1_simd_sse128.c is not compiled for this architecture."
 
-#endif //HAVE_SSE
+#endif /*SHA1DC_HAVE_SSE128*/

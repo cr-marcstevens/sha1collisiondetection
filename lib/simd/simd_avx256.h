@@ -5,19 +5,20 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-// this header defines SIMD MACROS for avx256 intrinsics
-// used to generate avx256 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc)
-
+/*
+ * this header defines SIMD MACROS for avx256 intrinsics
+ * used to generate avx256 code from generic SIMD code (sha1_simd.cinc, ubc_check_simd.cinc)
+ */
 #ifndef SIMD_AVX256_HEADER
 #define SIMD_AVX256_HEADER
-#ifdef HAVE_AVX
-// requires AVX2 not just AVX
+#ifdef SHA1DC_HAVE_AVX256
+/* requires AVX2 not just AVX */
 #define SIMD_VERSION	avx256
 #define SIMD_VECSIZE	8
 
 #ifdef __GNUC__
 
-// TODO
+/* TODO */
 #include <immintrin.h>
 
 #define SIMD_WORD			__m256i
@@ -34,16 +35,16 @@
 #define SIMD_OR_VW(l,r)		_mm256_or_si256(l, _mm256_set1_epi32(r))
 #define SIMD_XOR_VV(l,r)	_mm256_xor_si256(l,r)
 #define SIMD_XOR_VW(l,r)	_mm256_xor_si256(l, _mm256_set1_epi32(r))
-//#define SIMD_NOT_V(l)		_mm256_andnot_si256(l,l)
+/*#define SIMD_NOT_V(l)		_mm256_andnot_si256(l,l)*/
 #define SIMD_SHL_V(l,i)		_mm256_slli_epi32(l,i)
 #define SIMD_SHR_V(l,i)		_mm256_srli_epi32(l,i)
-//#define SIMD_ROL_V(l,i)		_mm256_rol_epi32(l,i)
-//#define SIMD_ROR_V(l,i)		_mm256_ror_epi32(l,i)
+/*#define SIMD_ROL_V(l,i)		_mm256_rol_epi32(l,i)*/
+/*#define SIMD_ROR_V(l,i)		_mm256_ror_epi32(l,i)*/
 #define SIMD_CLEANUP
 
-#else // __GNUC__
+#else /* __GNUC__ */
 
-// VISUAL STUDIO
+/* VISUAL STUDIO */
 
 #include <immintrin.h>
 
@@ -61,17 +62,17 @@
 #define SIMD_OR_VW(l,r)		_mm256_or_si256(l, _mm256_set1_epi32(r))
 #define SIMD_XOR_VV(l,r)	_mm256_xor_si256(l,r)
 #define SIMD_XOR_VW(l,r)	_mm256_xor_si256(l, _mm256_set1_epi32(r))
-//#define SIMD_NOT_V(l)		_mm256_andnot_si256(l,l)
+/*#define SIMD_NOT_V(l)		_mm256_andnot_si256(l,l)*/
 #define SIMD_SHL_V(l,i)		_mm256_slli_epi32(l,i)
 #define SIMD_SHR_V(l,i)		_mm256_srli_epi32(l,i)
-//#define SIMD_ROL_V(l,i)		_mm256_rol_epi32(l,i)
-//#define SIMD_ROR_V(l,i)		_mm256_ror_epi32(l,i)
+/*#define SIMD_ROL_V(l,i)		_mm256_rol_epi32(l,i)*/
+/*#define SIMD_ROR_V(l,i)		_mm256_ror_epi32(l,i)*/
 #define SIMD_CLEANUP
 
-#endif // __GNUC__
+#endif /* __GNUC__ */
 
 
-// these are general definitions for lacking SIMD operations
+/* these are general definitions for lacking SIMD operations */
 
 #ifndef SIMD_NOT_V
 #define SIMD_NOT_V(l)		SIMD_XOR_VW(l,0xFFFFFFFF)
@@ -85,5 +86,5 @@
 #define SIMD_ROL_V(l,i)		SIMD_OR_VV(SIMD_SHL_V(l,i),SIMD_SHR_V(l,32-i))
 #define SIMD_ROR_V(l,i)		SIMD_OR_VV(SIMD_SHR_V(l,i),SIMD_SHL_V(l,32-i))
 #endif
-#endif // HAVE_AVX
-#endif // SIMD_AVX256_HEADER
+#endif /* SHA1DC_HAVE_AVX256 */
+#endif /* SIMD_AVX256_HEADER */

@@ -5,8 +5,8 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-// this file generates avx512 code using avx512 MACROS (simd_avx512.h) and generic SIMD code (ubc_check_simd.cinc)
-#ifdef HAVE_AVX512
+/* this file generates avx512 code using avx512 MACROS (simd_avx512.h) and generic SIMD code (ubc_check_simd.cinc) */
+#ifdef SHA1DC_HAVE_AVX512
 #include "ubc_check.h"
 #include "simd_avx512.h"
 
@@ -18,4 +18,4 @@
 
 #pragma message "The file: ubc_check_simd_avx512.c is not compiled for this architecture."
 
-#endif // HAVE_AVX512
+#endif /* SHA1DC_HAVE_AVX512 */
