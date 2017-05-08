@@ -74,6 +74,15 @@ else
 SIMDCONFIG+= -DNO_HAVE_AVX
 endif
 
+ifeq ($(HAVEAVX512),1)
+CC=gcc-6.2
+AVXFLAGS=-march=native
+SIMDCONFIG+= -DHAVE_AVX512
+FS_LIB_SIMD+=$(wildcard ${LIB_DIR}/*_avx512.c)
+else
+SIMDCONFIG+= -DNO_HAVE_AVX512
+endif
+
 ifeq ($(HAVENEON),1)
 NEONFLAGS=-mfpu=neon
 SIMDCONFIG+= -DHAVE_NEON
@@ -134,6 +143,17 @@ clean::
 	-find . -type d -name '.libs' -print | xargs rm -rv
 	-rm -rf bin
 
+#temporary rules for avx512 since libtool on knl/gcc-6.2 seems broken
+.PHONY: avx512lib avx512main avx512
+avx512lib:
+	cd lib; gcc-6.2 -DHAVE_AVX512 -Wall -pedantic -O3 -march=native -c *.c
+avx512main:
+	cd src; gcc-6.2 -DHAVE_AVX512 -Wall -pedantic -O3 -I../lib -march=native -c *.c
+avx512: avx512lib avx512main
+	cd bin; gcc-6.2 -Wall -pedantic -O3 ../lib/*.o ../src/*.o -o sha1dcsum
+	ln -s sha1dcsum bin/sha1dcsum_partialcoll
+
+
 .PHONY: test
 test: tools
 	bin/sha1dcsum test/*
@@ -177,6 +197,9 @@ ${LIB_DEP_DIR}/%sse128.d: ${LIB_DIR}/%sse128.c
 
 ${LIB_DEP_DIR}/%avx256.d: ${LIB_DIR}/%avx256.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(AVXFLAGS) -M -MF $@ $<
+	
+${LIB_DEP_DIR}/%avx512.d: ${LIB_DIR}/%avx512.c
+	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(AVXFLAGS) -M -MF $@ $<
 
 ${LIB_DEP_DIR}/%neon128.d: ${LIB_DIR}/%neon128.c
 	${MKDIR} $(shell dirname $@) && $(CC_DEP) $(CFLAGS) $(NEONFLAGS) -M -MF $@ $<
@@ -193,6 +216,9 @@ ${LIB_OBJ_DIR}/%sse128.lo ${LIB_OBJ_DIR}/%sse128.o: ${LIB_DIR}/%sse128.c ${LIB_D
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(SSEFLAGS) -o $@ -c $<
 
 ${LIB_OBJ_DIR}/%avx256.lo ${LIB_OBJ_DIR}/%avx256.o: ${LIB_DIR}/%avx256.c ${LIB_DEP_DIR}/%avx256.d
+	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(AVXFLAGS) -o $@ -c $<
+	
+${LIB_OBJ_DIR}/%avx512.lo ${LIB_OBJ_DIR}/%avx512.o: ${LIB_DIR}/%avx512.c ${LIB_DEP_DIR}/%avx512.d
 	${MKDIR} $(shell dirname $@) && $(CC) $(CFLAGS) $(AVXFLAGS) -o $@ -c $<
 
 ${LIB_OBJ_DIR}/%neon128.lo ${LIB_OBJ_DIR}/%neon128.o: ${LIB_DIR}/%neon128.c ${LIB_DEP_DIR}/%neon128.d
