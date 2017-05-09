@@ -22,6 +22,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libtool; fi
   
 script:
+  - make config
   - make
   - make test
 

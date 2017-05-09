@@ -5,16 +5,18 @@
 ## https://opensource.org/licenses/MIT
 ##
 
-# automatic configuration
+# if lib/simd/config.h does not exist, create empty one and force automatic configuration
 ifeq (,$(wildcard lib/simd/config.h))
 $(shell touch lib/simd/config.h)
-$(shell rm Makefile.config)
+$(shell rm -f Makefile.config)
 endif
 
+# if Makefile.config does not exist, create empty lib/simd/config.h and warn
 ifeq (,$(wildcard Makefile.config))
 $(shell echo > lib/simd/config.h)
-config_then_all: config
-	@echo "\nConfiguration done: rerun make\n"
+ifneq (config,$(MAKECMDGOALS))
+$(error Run 'make config' or 'make NOSIMD=1 config' first)
+endif
 endif
 
 -include Makefile.config
@@ -51,6 +53,11 @@ MKDIR=mkdir -p
 
 CFLAGS=-O2 -Wall -Werror -Wextra -pedantic -std=c90 -Ilib
 LDFLAGS=
+MMX64FLAGS=-mmmx
+SSE128FLAGS=-msse -msse2
+AVX256FLAGS=-mavx -mavx2
+AVX512FLAGS=-mavx512dq
+NEON128FLAGS=-mfpu=neon
 
 CFLAGS+=$(TARGETCFLAGS)
 LDFLAGS+=$(TARGETLDFLAGS)
@@ -73,7 +80,6 @@ LD:=$(CC)
 LT_INSTALL:=$(INSTALL)
 endif
 
-
 LIB_DIR=lib
 LIB_DEP_DIR=dep_lib
 LIB_OBJ_DIR=obj_lib
@@ -86,8 +92,32 @@ SRC_OBJ_DIR=obj_src
 
 H_DEP:=$(shell find . -type f -name "*.h")
 FS_LIB=$(wildcard $(LIB_DIR)/*.c)
-FS_SIMD_LIB=$(filter-out $(LIB_SIMD_DIR)/simd_test.c,$(wildcard $(LIB_SIMD_DIR)/*.c))
 FS_SRC=$(wildcard $(SRC_DIR)/*.c)
+FS_SIMD_LIB=
+
+ifeq ($(HAVE_SIMD),1)
+FS_SIMD_LIB += $(wildcard $(LIB_SIMD_DIR)/*_simd.c)
+endif
+ifeq ($(HAVE_MMX64),1)
+%_mmx64.lo %_mmx64.o: CFLAGS += $(MMX64FLAGS)
+FS_SIMD_LIB += $(wildcard $(LIB_SIMD_DIR)/*_mmx64.c)
+endif
+ifeq ($(HAVE_SSE128),1)
+%_sse128.lo %_sse128.o: CFLAGS += $(SSE128FLAGS)
+FS_SIMD_LIB += $(wildcard $(LIB_SIMD_DIR)/*_sse128.c)
+endif
+ifeq ($(HAVE_AVX256),1)
+%_avx256.lo %_avx256.o: CFLAGS += $(AVX256FLAGS)
+FS_SIMD_LIB += $(wildcard $(LIB_SIMD_DIR)/*_avx256.c)
+endif
+ifeq ($(HAVE_AVX512),1)
+%_avx512.lo %_avx512.o: CFLAGS += $(AVX512FLAGS)
+FS_SIMD_LIB += $(wildcard $(LIB_SIMD_DIR)/*_avx512.c)
+endif
+ifeq ($(HAVE_NEON128),1)
+%_neon128.lo %_neon128.o: CFLAGS += $(NEON128FLAGS)
+FS_SIMD_LIB += $(wildcard $(LIB_SIMD_DIR)/*_neon128.c)
+endif
 
 FS_OBJ_LIB=$(FS_LIB:$(LIB_DIR)/%.c=$(LIB_OBJ_DIR)/%.lo)
 FS_OBJ_SIMD_LIB=$(FS_SIMD_LIB:$(LIB_SIMD_DIR)/%.c=$(LIB_OBJ_SIMD_DIR)/%.lo)
@@ -99,11 +129,7 @@ FS_DEP_SIMD_LIB=$(FS_SIMD_LIB:$(LIB_SIMD_DIR)/%.c=$(LIB_DEP_SIMD_DIR)/%.d)
 FS_DEP_SRC=$(FS_SRC:$(SRC_DIR)/%.c=$(SRC_DEP_DIR)/%.d)
 FS_DEP=$(FS_DEP_SRC) $(FS_DEP_LIB) $(FS_DEP_SIMD_LIB)
 
-MMX64FLAGS=-mmmx
-SSE128FLAGS=-msse -msse2
-AVX256FLAGS=-mavx -mavx2
-AVX512FLAGS=-mavx512dq
-NEON128FLAGS=-mfpu=neon
+
 
 .SUFFIXES: .c .d
 
@@ -112,13 +138,23 @@ all: library tools
 
 .PHONY: config
 config:
-	rm -f lib/simd/config.h Makefile.config
+	@echo > lib/simd/config.h
+	@echo > Makefile.config
+ifeq (,$(NOSIMD))
 	@if $(MAKE) SIMDTESTFLAGS="$(MMX64FLAGS)   -DTEST_MMX64   -DSHA1DC_HAVE_MMX64"   simd_test >/dev/null; then $(MAKE) SIMD=MMX64   enablesimd ; else $(MAKE) SIMD=MMX64   disablesimd; fi
 	@if $(MAKE) SIMDTESTFLAGS="$(SSE128FLAGS)  -DTEST_SSE128  -DSHA1DC_HAVE_SSE128"  simd_test >/dev/null; then $(MAKE) SIMD=SSE128  enablesimd ; else $(MAKE) SIMD=SSE128  disablesimd; fi
 	@if $(MAKE) SIMDTESTFLAGS="$(AVX256FLAGS)  -DTEST_AVX256  -DSHA1DC_HAVE_AVX256"  simd_test >/dev/null; then $(MAKE) SIMD=AVX256  enablesimd ; else $(MAKE) SIMD=AVX256  disablesimd; fi
 	@if $(MAKE) SIMDTESTFLAGS="$(AVX512FLAGS)  -DTEST_AVX512  -DSHA1DC_HAVE_AVX512"  simd_test >/dev/null; then $(MAKE) SIMD=AVX512  enablesimd ; else $(MAKE) SIMD=AVX512  disablesimd; fi
 	@if $(MAKE) SIMDTESTFLAGS="$(NEON128FLAGS) -DTEST_NEON128 -DSHA1DC_HAVE_NEON128" simd_test >/dev/null; then $(MAKE) SIMD=NEON128 enablesimd ; else $(MAKE) SIMD=NEON128 disablesimd; fi
-	cat Makefile.config
+endif
+	@if [ `grep "=1" Makefile.config | wc -l` -ne 0 ]; then \
+		echo "HAVE_SIMD=1" >> Makefile.config; \
+		echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h; \
+	else \
+		echo "HAVE_SIMD=0" >> Makefile.config; \
+		echo "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h; \
+	fi
+	@cat Makefile.config
 
 .PHONY: enablesimd disablesimd
 enablesimd:
@@ -211,37 +247,6 @@ $(SRC_OBJ_DIR)/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d $(H_DE
 $(LIB_DEP_DIR)/%.d: $(LIB_DIR)/%.c
 	$(MKDIR) $(shell dirname $@)
 	$(CC_DEP) $(CFLAGS) -M -MF $@ $<
-
-
-ifeq ($(HAVE_MMX64),1)
-$(LIB_OBJ_SIMD_DIR)/%_mmx64.lo $(LIB_OBJ_SIMD_DIR)/%_mmx64.o: $(LIB_SIMD_DIR)/%_mmx64.c $(LIB_DEP_SIMD_DIR)/%_mmx64.d $(H_DEP)
-	$(MKDIR) $(shell dirname $@)
-	$(CC) $(CFLAGS) $(MMX64FLAGS) -o $@ -c $<
-endif
-
-ifeq ($(HAVE_SSE128),1)
-$(LIB_OBJ_SIMD_DIR)/%_sse128.lo $(LIB_OBJ_SIMD_DIR)/%_sse128.o: $(LIB_SIMD_DIR)/%_sse128.c $(LIB_DEP_SIMD_DIR)/%_sse128.d $(H_DEP)
-	$(MKDIR) $(shell dirname $@)
-	$(CC) $(CFLAGS) $(SSE128FLAGS) -o $@ -c $<
-endif
-
-ifeq ($(HAVE_AVX256),1)
-$(LIB_OBJ_SIMD_DIR)/%_avx256.lo $(LIB_OBJ_SIMD_DIR)/%_avx256.o: $(LIB_SIMD_DIR)/%_avx256.c $(LIB_DEP_SIMD_DIR)/%_avx256.d $(H_DEP)
-	$(MKDIR) $(shell dirname $@)
-	$(CC) $(CFLAGS) $(AVX256FLAGS) -o $@ -c $<
-endif
-
-ifeq ($(HAVE_AVX512),1)
-$(LIB_OBJ_SIMD_DIR)/%_avx512.lo $(LIB_OBJ_SIMD_DIR)/%_avx512.o: $(LIB_SIMD_DIR)/%_avx512.c $(LIB_DEP_SIMD_DIR)/%_avx512.d $(H_DEP)
-	$(MKDIR) $(shell dirname $@)
-	$(CC) $(CFLAGS) $(AVX512FLAGS) -o $@ -c $<
-endif
-
-ifeq ($(HAVE_NEON128),1)
-$(LIB_OBJ_SIMD_DIR)/%_neon128.lo $(LIB_OBJ_SIMD_DIR)/%_neon128.o: $(LIB_SIMD_DIR)/%_neon128.c $(LIB_DEP_SIMD_DIR)/%_neon128.d $(H_DEP)
-	$(MKDIR) $(shell dirname $@)
-	$(CC) $(CFLAGS) $(NEON128FLAGS) -o $@ -c $<
-endif
 
 $(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d $(H_DEP)
 	$(MKDIR) $(shell dirname $@)
