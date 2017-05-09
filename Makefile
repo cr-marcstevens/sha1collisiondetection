@@ -94,7 +94,7 @@ SRC_OBJ_DIR=obj_src
 
 H_DEP:=$(shell find . -type f -name "*.h")
 FS_LIB=$(wildcard $(LIB_DIR)/*.c)
-FS_SRC=$(wildcard $(SRC_DIR)/*.c)
+FS_SRC=$(wildcard $(SRC_DIR)/main.c)
 FS_SIMD_LIB=
 
 ifeq ($(HAVE_SIMD),1)
