@@ -32,6 +32,8 @@ endif
 
 LIBCOMPAT=1:0:0
 
+SIMD_MAX_DVS=32
+
 PREFIX ?= /usr/local
 BINDIR=$(PREFIX)/bin
 LIBDIR=$(PREFIX)/lib
@@ -92,7 +94,7 @@ SRC_OBJ_DIR=obj_src
 
 H_DEP:=$(shell find . -type f -name "*.h")
 FS_LIB=$(wildcard $(LIB_DIR)/*.c)
-FS_SRC=$(wildcard $(SRC_DIR)/*.c)
+FS_SRC=$(wildcard $(SRC_DIR)/main.c)
 FS_SIMD_LIB=
 
 ifeq ($(HAVE_SIMD),1)
@@ -234,6 +236,13 @@ bin/sha1dcsum: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum_partialcoll
 
+
+bin/simd_table_gen: $(SRC_OBJ_DIR)/simd_table_gen.lo
+	$(LD) $(LDFLAGS) $< -o $@
+
+.PHONY: gen_simd_tables
+gen_simd_tables: bin/simd_table_gen
+	$< src/DV_data.txt $(SIMD_MAX_DVS)
 
 $(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
 	$(MKDIR) $(shell dirname $@)
