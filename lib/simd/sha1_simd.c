@@ -114,7 +114,7 @@ sha1_simd_implementation_t *simd_implementation_table[SIMD_IMPLEMENTATION_CNT+1]
 	&sha1_simd_mmx64_implementation,
 #endif
 #ifdef SHA1DC_HAVE_SSE128
-	&sha1_simd_SSE128_implementation,
+	&sha1_simd_sse128_implementation,
 #endif
 #ifdef SHA1DC_HAVE_NEON128
 	&sha1_simd_neon128_implementation,
@@ -128,7 +128,72 @@ sha1_simd_implementation_t *simd_implementation_table[SIMD_IMPLEMENTATION_CNT+1]
 	NULL
 };
 
+void initialize_simd()
+{
+	/* TODO Put configuration code here. */
+}
 
+size_t get_simd_index()
+{
+	if ((char)-1 == simd_index)
+	{
+		initialize_simd();
+	}
+
+	return (size_t)simd_index;
+}
+
+void sha1_recompress_fast_58_simd(void* ihvin, void* ihvout, const void* me, void* state)
+{
+	size_t i;
+	
+	i = get_simd_index();
+
+	if ((i < SIMD_IMPLEMENTATION_CNT) &&
+		(NULL != simd_implementation_table[i]))
+	{		
+		simd_implementation_table[i]->sha1_recompression_fast_58(ihvin, ihvout, me, state);
+	}
+}
+
+void sha1_recompress_fast_65_simd(void* ihvin, void* ihvout, const void* me, void* state)
+{
+	size_t i;
+
+	i = get_simd_index();
+
+	if ((i < SIMD_IMPLEMENTATION_CNT) &&
+		(NULL != simd_implementation_table[i]))
+	{
+		simd_implementation_table[i]->sha1_recompression_fast_65(ihvin, ihvout, me, state);
+	}
+}
+
+void sha1_apply_message_differences_simd(const uint32_t me[80], const void* dm, void* dme)
+{
+	size_t i;
+
+	i = get_simd_index();
+
+	if ((i < SIMD_IMPLEMENTATION_CNT) &&
+		(NULL != simd_implementation_table[i]))
+	{
+		simd_implementation_table[i]->sha1_apply_message_differences(me, dm, dme);
+	}
+}
+
+void sha1_compare_digests_simd(const SHA1_CTX* ctx, const void* ihv_full_collision, const void* ihv_reduced_round, void* collision_detected)
+{
+	size_t i;
+
+	i = get_simd_index();
+
+	if ((i < SIMD_IMPLEMENTATION_CNT) &&
+		(NULL != simd_implementation_table[i]))
+	{
+		simd_implementation_table[i]->sha1_compare_digests(ctx, ihv_full_collision, ihv_reduced_round, collision_detected);
+	}
+}
 
 #ifdef SHA1_SIMD_IMPLEMENTED_XXXXX
 static void sha1_process_simd(SHA1_CTX* ctx, const uint32_t block[16])

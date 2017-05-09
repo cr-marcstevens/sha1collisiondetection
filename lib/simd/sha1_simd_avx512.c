@@ -17,13 +17,24 @@
 #define SHA1_COMPRESSION_SIMD           sha1_avx512
 #define SHA1_COMPRESSION_W_SIMD         sha1_W_avx512
 #define SHA1_COMPRESSION_STATES_SIMD    sha1_states_avx512
-#define SHA1_RECOMPRESSION_SIMD(t)      sha1recompress_fast_ ## t ## _avx512
+#define SHA1_RECOMPRESSION_SIMD(t)      sha1_recompress_fast_ ## t ## _avx512
 #define SHA1_RECOMPRESSION_TABLE_SIMD   sha1_recompression_step_avx512
 #define SHA1_APPLY_MESSAGE_DIFFERENCES  sha1_apply_message_differences_avx512
 #define SHA1_COMPARE_DIGESTS            sha1_compare_digests_avx512
 
 
 #include "sha1_simd.cinc"
+
+sha1_simd_implementation_t sha1_simd_avx512_implementation =
+{
+	simd_type_avx512,
+	SIMD_VECSIZE,
+	(sha1_recompression_simd_fn)sha1_recompress_fast_58_avx512,
+	(sha1_recompression_simd_fn)sha1_recompress_fast_65_avx512,
+	(sha1_apply_message_differences_simd_fn)sha1_apply_message_differences_avx512,
+	(sha1_compare_digests_simd_fn)sha1_compare_digests_avx512
+};
+
 
 #else
 
