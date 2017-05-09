@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include <sha1.h>
+#include "sha1.h"
+#include "sha1_simd.h"
+
 
 #define CNT_SHA1_DVS (16)
 uint32_t sha1_dvs_interleaved[80][CNT_SHA1_DVS] = 
@@ -103,7 +105,32 @@ size_t offset65 = 0;
 size_t len58 = 0;
 size_t len65 = 0;
 
-/*
+/* volatile char should have atomic writes. */
+volatile char simd_index = -1;
+
+sha1_simd_implementation_t *simd_implementation_table[SIMD_IMPLEMENTATION_CNT+1] =
+{
+#ifdef SHA1DC_HAVE_MMX64
+	&sha1_simd_mmx64_implementation,
+#endif
+#ifdef SHA1DC_HAVE_SSE128
+	&sha1_simd_SSE128_implementation,
+#endif
+#ifdef SHA1DC_HAVE_NEON128
+	&sha1_simd_neon128_implementation,
+#endif
+#ifdef SHA1DC_HAVE_AVX256
+	&sha1_simd_avx256_implementation,
+#endif
+#ifdef SHA1DC_HAVE_AVX512
+	&sha1_simd_avx512_implementation,
+#endif
+	NULL
+};
+
+
+
+#ifdef SHA1_SIMD_IMPLEMENTED_XXXXX
 static void sha1_process_simd(SHA1_CTX* ctx, const uint32_t block[16])
 {
 	ctx->ihv1[0] = ctx->ihv[0];
@@ -138,4 +165,4 @@ static void sha1_process_simd(SHA1_CTX* ctx, const uint32_t block[16])
 		}
 	}
 }
-*/
+#endif
