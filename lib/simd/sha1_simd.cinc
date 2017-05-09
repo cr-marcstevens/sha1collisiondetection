@@ -948,3 +948,35 @@ sha1_recompression_simd_type SHA1_RECOMPRESSION_TABLE_SIMD [80] =
 	SHA1_RECOMPRESSION_SIMD(60), SHA1_RECOMPRESSION_SIMD(61), SHA1_RECOMPRESSION_SIMD(62), SHA1_RECOMPRESSION_SIMD(63), SHA1_RECOMPRESSION_SIMD(64), SHA1_RECOMPRESSION_SIMD(65), SHA1_RECOMPRESSION_SIMD(66), SHA1_RECOMPRESSION_SIMD(67), SHA1_RECOMPRESSION_SIMD(68), SHA1_RECOMPRESSION_SIMD(69),
 	SHA1_RECOMPRESSION_SIMD(70), SHA1_RECOMPRESSION_SIMD(71), SHA1_RECOMPRESSION_SIMD(72), SHA1_RECOMPRESSION_SIMD(73), SHA1_RECOMPRESSION_SIMD(74), SHA1_RECOMPRESSION_SIMD(75), SHA1_RECOMPRESSION_SIMD(76), SHA1_RECOMPRESSION_SIMD(77), SHA1_RECOMPRESSION_SIMD(78), SHA1_RECOMPRESSION_SIMD(79),
 };
+
+void SHA1_APPLY_MESSAGE_DIFFERENCES(const uint32_t me[80], const SIMD_WORD dm[80], SIMD_WORD dme[80])
+{
+	size_t i;
+
+	for (i = 0; i < 80; i++)
+	{
+		dme[i] = SIMD_XOR_VW(dm[i], me[i]);
+	}
+}
+
+void SHA1_COMPARE_DIGESTS(const SHA1_CTX* ctx, const SIMD_WORD ihv_full_collision[5], const SIMD_WORD ihv_reduced_round[5], SIMD_WORD *collision_detected)
+{
+	SIMD_WORD result;
+
+	result = SIMD_XOR_VW(ihv_full_collision[0], ctx->ihv[0]);
+        result = SIMD_OR_VV(result, SIMD_XOR_VW(ihv_full_collision[1], ctx->ihv[1]));
+	result = SIMD_OR_VV(result, SIMD_XOR_VW(ihv_full_collision[2], ctx->ihv[2]));
+	result = SIMD_OR_VV(result, SIMD_XOR_VW(ihv_full_collision[3], ctx->ihv[3]));
+	result = SIMD_OR_VV(result, SIMD_XOR_VW(ihv_full_collision[4], ctx->ihv[4]));
+
+	if (ctx->reduced_round_coll)
+	{
+		result = SIMD_OR_VV(result, SIMD_XOR_VW(ihv_reduced_round[0], ctx->ihv[0]));
+		result = SIMD_OR_VV(result, SIMD_XOR_VW(ihv_reduced_round[1], ctx->ihv[1]));
+		result = SIMD_OR_VV(result, SIMD_XOR_VW(ihv_reduced_round[2], ctx->ihv[2]));
+		result = SIMD_OR_VV(result, SIMD_XOR_VW(ihv_reduced_round[3], ctx->ihv[3]));
+		result = SIMD_OR_VV(result, SIMD_XOR_VW(ihv_reduced_round[4], ctx->ihv[4]));
+	}
+
+	*collision_detected = result;
+}

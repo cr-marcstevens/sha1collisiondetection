@@ -13,12 +13,14 @@
 #include "sha1.h"
 #include "simd_mmx64.h"
 
-#define SHA1_MESSAGE_EXPANSION_SIMD					sha1_message_expansion_mmx64
-#define SHA1_COMPRESSION_SIMD						sha1_mmx64
-#define SHA1_COMPRESSION_W_SIMD						sha1_W_mmx64
-#define SHA1_COMPRESSION_STATES_SIMD				sha1_states_mmx64
-#define SHA1_RECOMPRESSION_SIMD(t)					sha1recompress_fast_ ## t ## _mmx64
-#define SHA1_RECOMPRESSION_TABLE_SIMD				sha1_recompression_step_mmx64
+#define SHA1_MESSAGE_EXPANSION_SIMD     sha1_message_expansion_mmx64
+#define SHA1_COMPRESSION_SIMD           sha1_mmx64
+#define SHA1_COMPRESSION_W_SIMD         sha1_W_mmx64
+#define SHA1_COMPRESSION_STATES_SIMD    sha1_states_mmx64
+#define SHA1_RECOMPRESSION_SIMD(t)      sha1recompress_fast_ ## t ## _mmx64
+#define SHA1_RECOMPRESSION_TABLE_SIMD   sha1_recompression_step_mmx64
+#define SHA1_APPLY_MESSAGE_DIFFERENCES  sha1_apply_message_differences_mmx64
+#define SHA1_COMPARE_DIGESTS            sha1_compare_digests_mmx64
 
 #include "sha1_simd.cinc"
 
