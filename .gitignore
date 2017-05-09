@@ -27,3 +27,12 @@
 *.exe
 *.out
 *.app
+
+#sha1 collision detection specific config files.
+Makefile.config
+lib/simd/config.h
+
+# sha1 collision detection specific build directories
+bin/
+dep_lib/
+dep_src/
