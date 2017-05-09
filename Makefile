@@ -254,7 +254,7 @@ $(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d $(H_DE
 
 .PHONY: simd_test
 simd_test:
-	$(MKDIR) $(shell dirname $@)
+	$(MKDIR) $(LIB_OBJ_DIR)/simd
 	$(CC) $(CFLAGS) $(SIMDTESTFLAGS) -o $(LIB_OBJ_DIR)/simd/simd_test.lo -c $(LIB_DIR)/simd/simd_test.c
 
 -include $(FS_DEP)
