@@ -142,6 +142,8 @@ all: library tools
 config:
 	@echo > lib/simd/config.h
 	@echo > Makefile.config
+	@echo > lib/simd/dvs_simd.h
+	@echo > lib/simd/dvs_simd.c
 ifeq (,$(NOSIMD))
 	@if $(MAKE) SIMDTESTFLAGS="$(MMX64FLAGS)   -DTEST_MMX64   -DSHA1DC_HAVE_MMX64"   simd_test >/dev/null; then $(MAKE) SIMD=MMX64   enablesimd ; else $(MAKE) SIMD=MMX64   disablesimd; fi
 	@if $(MAKE) SIMDTESTFLAGS="$(SSE128FLAGS)  -DTEST_SSE128  -DSHA1DC_HAVE_SSE128"  simd_test >/dev/null; then $(MAKE) SIMD=SSE128  enablesimd ; else $(MAKE) SIMD=SSE128  disablesimd; fi
