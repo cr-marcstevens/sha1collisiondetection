@@ -75,7 +75,7 @@ LIB_EXT:=la
 else
 LT_CC:=$(CC)
 LT_CC_DEP:=$(CC_DEP)
-LT_LD:=$(LD)
+LT_LD:=$(CC)
 LT_INSTALL:=$(INSTALL)
 LIB_EXT:=a
 endif
