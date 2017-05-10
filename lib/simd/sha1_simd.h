@@ -11,11 +11,12 @@
 
 typedef enum {
     simd_type_mmx64 = 0,
-    simd_type_sse128,
     simd_type_neon128,
+    simd_type_sse128,
     simd_type_avx256,
     simd_type_avx512,
-    simd_type_unknown = 0xff
+    simd_type_disabled = 0x7e,
+    simd_type_unknown = 0x7f
 } simd_type;
 
 typedef void (*sha1_recompression_simd_fn)(void*, void*,  const void*, const void*);

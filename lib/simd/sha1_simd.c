@@ -5,34 +5,62 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-#include <stdlib.h>
-#include <stdint.h>
-
 #include "sha1.h"
 #include "sha1_simd.h"
 #include "dvs_simd.h"
+#include "simd_config.h"
+
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
+
+#if defined(SHA1DC_HAVE_MMX64) || defined(SHA1DC_HAVE_SSE128) || defined(SHA1DC_HAVE_AVX256) || defined(SHA1DC_HAVE_AVX512)
+#include <x86intrin.h>
+static void sha1dc_cpuid(uint32_t level, uint32_t sublevel, uint32_t result[4])
+{
+#ifdef _MSC_VER
+	__cpuidex(result, level, sublevel);
+#else
+	result[0] = level;
+	result[1] = sublevel;
+	result[2] = 0;
+	result[3] = 0;
+	__asm__ ("cpuid" : "+a" (result[0]), "+b" (result[1]), "+c" (result[2]), "+d" (result[3]));
+#endif
+}
+
+#endif
 
 /* volatile char should have atomic writes. */
-volatile char simd_index = -1;
+static volatile char simd_index = (char)simd_type_unknown;
 
-sha1_simd_implementation_t *simd_implementation_table[SIMD_IMPLEMENTATION_CNT+1] =
+static sha1_simd_implementation_t *simd_implementation_table[5] =
 {
 #ifdef SHA1DC_HAVE_MMX64
 	&sha1_simd_mmx64_implementation,
-#endif
-#ifdef SHA1DC_HAVE_SSE128
-	&sha1_simd_sse128_implementation,
+#else
+	NULL,
 #endif
 #ifdef SHA1DC_HAVE_NEON128
 	&sha1_simd_neon128_implementation,
+#else
+	NULL,
+#endif
+#ifdef SHA1DC_HAVE_SSE128
+	&sha1_simd_sse128_implementation,
+#else
+	NULL,
 #endif
 #ifdef SHA1DC_HAVE_AVX256
 	&sha1_simd_avx256_implementation,
+#else
+	NULL,
 #endif
 #ifdef SHA1DC_HAVE_AVX512
-	&sha1_simd_avx512_implementation,
-#endif
+	&sha1_simd_avx512_implementation
+#else
 	NULL
+#endif
 };
 
 
@@ -41,58 +69,76 @@ typedef struct {
 	size_t offset65;
 } dv_table_info_t;
 
-dv_table_info_t dv_table_info[SIMD_IMPLEMENTATION_CNT+1] = 
+static dv_table_info_t dv_table_info[5] = 
 {
-#ifdef SHA1DC_HAVE_MMX64
-    {
-        SHA1DC_SIMD_2_OFFSET58,
-        SHA1DC_SIMD_2_OFFSET65
-    },
-#endif
-#ifdef SHA1DC_HAVE_SSE128
-    {
-        SHA1DC_SIMD_4_OFFSET58,
-        SHA1DC_SIMD_4_OFFSET65
-    },
-#endif
-#ifdef SHA1DC_HAVE_NEON128
-    {
-        SHA1DC_SIMD_4_OFFSET58,
-        SHA1DC_SIMD_4_OFFSET65
-    },
-#endif
-#ifdef SHA1DC_HAVE_AVX256
-    {
-        SHA1DC_SIMD_8_OFFSET58,
-        SHA1DC_SIMD_8_OFFSET65
-    },
-#endif
-#ifdef SHA1DC_HAVE_AVX512
-    {
-        SHA1DC_SIMD_16_OFFSET58,
-        SHA1DC_SIMD_16_OFFSET65
-    },
-#endif
-	{0, 0}
-
+    { SHA1DC_SIMD_2_OFFSET58, SHA1DC_SIMD_2_OFFSET65 }, /* MMX64 */
+    { SHA1DC_SIMD_4_OFFSET58, SHA1DC_SIMD_4_OFFSET65 }, /* NEON128 */
+    { SHA1DC_SIMD_4_OFFSET58, SHA1DC_SIMD_4_OFFSET65 }, /* SSE128 */
+    { SHA1DC_SIMD_8_OFFSET58, SHA1DC_SIMD_8_OFFSET65 }, /* AVX256 */
+    { SHA1DC_SIMD_16_OFFSET58, SHA1DC_SIMD_16_OFFSET65 } /* AVX512 */
 };
 
-void initialize_simd()
+static void initialize_simd()
 {
+	uint32_t abcd[4];
+	uint32_t maxlevel;
 	/* TODO Put configuration code here. */
+#if defined(SHA1DC_HAVE_MMX64) || defined(SHA1DC_HAVE_SSE128) || defined(SHA1DC_HAVE_AVX256) || defined(SHA1DC_HAVE_AVX512)
+	sha1dc_cpuid(0,0,abcd);
+	maxlevel = abcd[0];
+#ifdef SHA1DC_HAVE_AVX512
+	if (7 <= maxlevel && (sha1dc_cpuid(7,0,abcd),1) && abcd[1]&(1<<17))
+	{
+		simd_index = (char)simd_type_avx512;
+		return;
+	}
+#endif
+#ifdef SHA1DC_HAVE_AVX256
+	if (7 <= maxlevel && (sha1dc_cpuid(7,0,abcd),1) && abcd[1]&(1<<5))
+	{
+		simd_index = (char)simd_type_avx256;
+		return;
+	}
+#endif
+#ifdef SHA1DC_HAVE_SSE128
+	if (1 <= maxlevel && (sha1dc_cpuid(1,0,abcd),1) && abcd[3]&(1<<26))
+	{
+		simd_index = (char)simd_type_sse128;
+		return;
+	}
+#endif
+#ifdef SHA1DC_HAVE_MMX64
+	if (1 <= maxlevel && (sha1dc_cpuid(1,0,abcd),1) && abcd[3]&(1<<23))
+	{
+		simd_index = (char)simd_type_mmx64;
+		return;
+	}
+#endif
+
+#endif
+#if defined(SHA1DC_HAVE_NEON128)
+	/* Do not detect NEON, just enable it if it is supported */
+	if (simd_index == (char)simd_type_unknown || simd_index < (char)simd_type_neon128)
+	{
+		simd_index = (char)simd_type_neon128;
+		return;
+	}
+#endif
+	simd_index = (char)simd_type_disabled;
 }
 
-size_t SHA1DC_get_simd()
+int SHA1DC_get_simd()
 {
-	if ((char)-1 == simd_index)
+	if (simd_index == simd_type_unknown)
 	{
 		initialize_simd();
+		fprintf(stderr, "Detected SIMD: %i\n", (int)(simd_index));
 	}
 
-	return (size_t)simd_index;
+	return (int)simd_index;
 }
 
-size_t get_dv_table_offset_58()
+static size_t get_dv_table_offset_58()
 {
     size_t i;
 
