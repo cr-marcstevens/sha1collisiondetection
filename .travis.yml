@@ -25,6 +25,7 @@ script:
   - make config
   - make
   - make test
+  - cat test_*.log
 
 notifications:
   on_success: change

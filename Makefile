@@ -143,11 +143,11 @@ config:
 	@echo > lib/simd/dvs_simd.h
 	@echo > lib/simd/dvs_simd.c
 ifeq (,$(NOSIMD))
-	@if $(MAKE) SIMDTESTFLAGS="$(MMX64FLAGS)   -DTEST_MMX64   -DSHA1DC_HAVE_MMX64"   simd_test >/dev/null; then $(MAKE) SIMD=MMX64   enablesimd ; else $(MAKE) SIMD=MMX64   disablesimd; fi
-	@if $(MAKE) SIMDTESTFLAGS="$(SSE128FLAGS)  -DTEST_SSE128  -DSHA1DC_HAVE_SSE128"  simd_test >/dev/null; then $(MAKE) SIMD=SSE128  enablesimd ; else $(MAKE) SIMD=SSE128  disablesimd; fi
-	@if $(MAKE) SIMDTESTFLAGS="$(AVX256FLAGS)  -DTEST_AVX256  -DSHA1DC_HAVE_AVX256"  simd_test >/dev/null; then $(MAKE) SIMD=AVX256  enablesimd ; else $(MAKE) SIMD=AVX256  disablesimd; fi
-	@if $(MAKE) SIMDTESTFLAGS="$(AVX512FLAGS)  -DTEST_AVX512  -DSHA1DC_HAVE_AVX512"  simd_test >/dev/null; then $(MAKE) SIMD=AVX512  enablesimd ; else $(MAKE) SIMD=AVX512  disablesimd; fi
-	@if $(MAKE) SIMDTESTFLAGS="$(NEON128FLAGS) -DTEST_NEON128 -DSHA1DC_HAVE_NEON128" simd_test >/dev/null; then $(MAKE) SIMD=NEON128 enablesimd ; else $(MAKE) SIMD=NEON128 disablesimd; fi
+	@if $(MAKE) SIMDTESTFLAGS="$(MMX64FLAGS)   -DTEST_MMX64   -DSHA1DC_HAVE_MMX64"   simd_test >test_mmx64.log; then $(MAKE) SIMD=MMX64   enablesimd ; else $(MAKE) SIMD=MMX64   disablesimd; fi
+	@if $(MAKE) SIMDTESTFLAGS="$(SSE128FLAGS)  -DTEST_SSE128  -DSHA1DC_HAVE_SSE128"  simd_test >test_sse128.log; then $(MAKE) SIMD=SSE128  enablesimd ; else $(MAKE) SIMD=SSE128  disablesimd; fi
+	@if $(MAKE) SIMDTESTFLAGS="$(AVX256FLAGS)  -DTEST_AVX256  -DSHA1DC_HAVE_AVX256"  simd_test >test_avx256.log; then $(MAKE) SIMD=AVX256  enablesimd ; else $(MAKE) SIMD=AVX256  disablesimd; fi
+	@if $(MAKE) SIMDTESTFLAGS="$(AVX512FLAGS)  -DTEST_AVX512  -DSHA1DC_HAVE_AVX512"  simd_test >test_avx512.log; then $(MAKE) SIMD=AVX512  enablesimd ; else $(MAKE) SIMD=AVX512  disablesimd; fi
+	@if $(MAKE) SIMDTESTFLAGS="$(NEON128FLAGS) -DTEST_NEON128 -DSHA1DC_HAVE_NEON128" simd_test >test_neon128.log; then $(MAKE) SIMD=NEON128 enablesimd ; else $(MAKE) SIMD=NEON128 disablesimd; fi
 endif
 	@if [ `grep "=1" Makefile.config | wc -l` -ne 0 ]; then \
 		(echo "HAVE_SIMD=1" >> Makefile.config); \
