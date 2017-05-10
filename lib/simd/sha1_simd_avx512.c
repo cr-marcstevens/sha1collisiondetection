@@ -11,6 +11,8 @@
 #ifdef SHA1DC_HAVE_AVX512
 #include "sha1.h"
 
+#include "sha1_simd.h"
+
 #include "simd_avx512.h"
 
 #define SHA1_MESSAGE_EXPANSION_SIMD     sha1_message_expansion_avx512

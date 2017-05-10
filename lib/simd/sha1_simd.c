@@ -73,7 +73,7 @@ dv_table_info_t dv_table_info[SIMD_IMPLEMENTATION_CNT+1] =
         SHA1DC_SIMD_16_OFFSET65
     },
 #endif
-	{0}
+	{0, 0}
 
 };
 
