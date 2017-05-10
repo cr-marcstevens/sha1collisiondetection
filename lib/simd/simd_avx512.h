@@ -20,7 +20,8 @@
 #ifdef __GNUC__
 
 /* TODO */
-#include <immintrin.h>
+#include <x86intrin.h>
+/*#include <immintrin.h>*/
 
 #define SIMD_WORD			__m512i
 
@@ -47,7 +48,8 @@
 
 /* VISUAL STUDIO */
 
-#include <immintrin.h>
+#include <x86intrin.h>
+/*#include <immintrin.h>*/
 
 #define SIMD_WORD			__m512i
 
