@@ -244,11 +244,13 @@ bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 
 
 bin/simd_table_gen: $(SRC_OBJ_DIR)/simd_table_gen.lo
-	$(LD) $(LDFLAGS) $< -o $@
+	$(MKDIR) $(shell dirname $@)
+	$(LD) $(LDFLAGS) $(SRC_OBJ_DIR)/simd_table_gen.lo -Lbin -o bin/simd_table_gen
 
 .PHONY: gen_simd_tables
 gen_simd_tables: bin/simd_table_gen
-	$< src/DV_data.txt $(SIMD_MAX_DVS)
+	bin/simd_table_gen src/DV_data.txt $(SIMD_MAX_DVS)
+
 
 $(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
 	$(MKDIR) $(shell dirname $@)
