@@ -14,8 +14,10 @@ endif
 # if Makefile.config does not exist, create empty lib/simd/config.h and warn
 ifeq (,$(wildcard Makefile.config))
 $(shell echo > lib/simd/config.h)
-ifneq (config,$(MAKECMDGOALS))
-$(error Run 'make config' or 'make NOSIMD=1 config' first)
+$(shell echo > lib/simd/dvs_simd.h)
+$(shell echo > lib/simd/dvs_simd.c)
+ifeq (,$(filter config clean,$(MAKECMDGOALS)))
+$(error Run 'make [NOSIMD=1] [SIMD_MAX_DVS=32] config' first)
 endif
 endif
 
@@ -155,7 +157,7 @@ endif
 		(echo "HAVE_SIMD=1" >> Makefile.config); \
 		(echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h); \
 		cat Makefile.config; \
-		echo "\nGenerating SIMD tables: lib/simd/dvs_simd.c lib/simd/dvs_simd.h..."; \
+		echo "\nGenerating SIMD tables using max $(SIMD_MAX_DVS) DVs: lib/simd/dvs_simd.c lib/simd/dvs_simd.h..."; \
 		($(MAKE) gen_simd_tables | grep "finalpadding" -A20 | cat) || (echo "FAILED !"); \
 	else \
 		(echo "HAVE_SIMD=0" >> Makefile.config); \
@@ -190,14 +192,13 @@ uninstall:
 
 .PHONY: clean
 clean:
-	-rm -rf bin Makefile.config lib/simd/config.h dep_lib obj_lib dep_src obj_src
+	-rm -rf bin Makefile.config lib/simd/config.h lib/simd/dvs_simd.* dep_lib obj_lib dep_src obj_src
 	-find . -type f -name '*.a' -print -delete
 	-find . -type f -name '*.d' -print -delete
 	-find . -type f -name '*.o' -print -delete
 	-find . -type f -name '*.la' -print -delete
 	-find . -type f -name '*.lo' -print -delete
 	-find . -type f -name '*.so' -print -delete
-	-find . -type d -name '.libs' -print | xargs rm -rv
 
 .PHONY: test
 test: tools

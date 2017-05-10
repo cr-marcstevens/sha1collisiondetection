@@ -248,7 +248,7 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 		/* recompute optimal padding for this case */
 		eval_align(0, cnt58, cnt58 + bestpadding, cnt65);
 		nrcols = cnt58 + cnt65 + DV_order_info.pad1 + DV_order_info.pad2;
-		printf("Using [case58(%i) padding(%i) case65(%i) padding(%i)]*80 + finalpadding(%i)\n", cnt58, bestpadding, cnt65, DV_order_info.pad2, DV_order_info.finalpad);
+		printf("Using table structure: [case58(#=%i) padding(#=%i) case65(#=%i) padding(#=%i)]*80 + finalpadding(#=%i)\n", cnt58, bestpadding, cnt65, DV_order_info.pad2, DV_order_info.finalpad);
 		for (i=0,j=0; i < nrdvs; ++i)
 			if (DVS[i].ok58)
 				ordered_DVS[j++] = DVS+i;
@@ -264,7 +264,7 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 		/* recompute optimal padding for this case */
 		eval_align(0, cnt65, cnt65 + bestpadding, cnt58);
 		nrcols = cnt58 + cnt65 + DV_order_info.pad1 + DV_order_info.pad2;
-		printf("Using [case65(%i) padding(%i) case58(%i) padding(%i)]*80 + finalpadding(%i)\n", cnt65, bestpadding, cnt58, DV_order_info.pad2, DV_order_info.finalpad);
+		printf("Using table structure: [case65(#=%i) padding(#=%i) case58(#=%i) padding(#=%i)]*80 + finalpadding(#=%i)\n", cnt65, bestpadding, cnt58, DV_order_info.pad2, DV_order_info.finalpad);
 		for (i=0,j=0; i < nrdvs; ++i)
 			if (DVS[i].ok65)
 				ordered_DVS[j++] = DVS+i;
