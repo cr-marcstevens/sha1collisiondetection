@@ -270,5 +270,6 @@ $(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d $(H_DE
 .PHONY: simd_test
 simd_test: CFLAGS+=$(SIMDTESTFLAGS)
 simd_test: $(LIB_OBJ_DIR)/simd/simd_test.lo
+	rm $<
 
 -include $(FS_DEP)
