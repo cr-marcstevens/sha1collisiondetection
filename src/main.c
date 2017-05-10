@@ -62,7 +62,6 @@ int main(int argc, char** argv)
 
         if (NULL != strstr(argv[0], "simd"))
         {
-            ctx2.simd = 2;
             SHA1DCSetUseUBC(&ctx2, 0);
         }
 
