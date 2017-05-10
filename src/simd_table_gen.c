@@ -5,10 +5,25 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-#define MAX_SIMD_EXPONENT (4) /* max SIMD width 2^4=16 in words */
+#include "../lib/simd/config.h"
+
+/* TODO: set SIMD_MAX_WORD_ALIGNMENT and MAX_SIMD_EXPONENT in ../lib/simd/config.h depending on platform and features */
+
+/* #define MAX_SIMD_EXPONENT (4) // max SIMD width 2^4=16 in words */
+#if defined(SHA1DC_HAVE_AVX512)
+#define MAX_SIMD_EXPONENT 4
+#elif defined(SHA1DC_HAVE_AVX256)
+#define MAX_SIMD_EXPONENT 3
+#elif (defined(SHA1DC_HAVE_SSE128) || defined(SHA1DC_HAVE_NEON128))
+#define MAX_SIMD_EXPONENT 2
+#elif defined(SHA1DC_HAVE_MMX64)
+#define MAX_SIMD_EXPONENT 1
+#else
+#define MAX_SIMD_EXPONENT 0
+#endif
 
 #define SIMD_MAX_WORD_ALIGNMENT (4) /* max alignment required is 4 words (even for 16 word vectors) */
-#define SIMD_MAX_CASE_PADDING (0) /* max padding between cases in words to try to improve alignment */
+#define SIMD_MAX_CASE_PADDING (SIMD_MAX_WORD_ALIGNMENT-1) /* max padding between cases in words to try to improve alignment */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,14 +31,21 @@
 
 typedef struct
 {
-	int dvType; 
-	int dvK; 
-	int dvB; 
+	int dvType;
+	int dvK;
+	int dvB;
 	int ok58;
 	int ok65;
 	uint32_t dv[80];
 	uint32_t dm[80];
 } DV_info_t;
+
+typedef struct
+{
+	int off1, len1, pad1, off2, len2, pad2, finalpad;
+	int simd_off2[MAX_SIMD_EXPONENT+1];
+	int first58;
+} DV_order_info_t;
 
 static uint32_t rotate_left(uint32_t x, unsigned n) { return (x<<n)|(x>>(32-n)); }
 static uint32_t rotate_right(uint32_t x, unsigned n) { return (x>>n)|(x<<(32-n)); }
@@ -70,16 +92,28 @@ int parse_error(char* str)
 	return 1;
 }
 
+DV_order_info_t DV_order_info;
+
 int eval_align(int off1, int len1, int off2, int len2)
 {
 	int i, j, weight = 0, maxalign;
-	int newoff;
+	int newoff, pad2;
+
+	DV_order_info.off1 = off1;
+	DV_order_info.len1 = len1;
+	DV_order_info.pad1 = off2 - (off1 + len1);
+	DV_order_info.off2 = off2;
+	DV_order_info.len2 = len2;
+	DV_order_info.pad2 = 0;
+	DV_order_info.simd_off2[0] = off2;
+
 	for (j = 1; j <= MAX_SIMD_EXPONENT; ++j)
 	{
 		maxalign = (1<<j);
 		if (maxalign > SIMD_MAX_WORD_ALIGNMENT)
 			maxalign = SIMD_MAX_WORD_ALIGNMENT;
 
+		/* count how many function calls are needed for this SIMD size */
 		newoff = off1 & ~(maxalign-1);
 		for (i = newoff; i < off1 + len1; i += 1<<j)
 			++weight;
@@ -87,7 +121,28 @@ int eval_align(int off1, int len1, int off2, int len2)
 		newoff = off2 & ~(maxalign-1);
 		for (i = newoff; i < off2 + len2; i += 1<<j)
 			++weight;
+
+		/* compute offset for second case and extra padding required */
+		pad2 = i - (off2 + len2);
+		while (pad2 >= maxalign && newoff >= maxalign)
+		{
+			pad2 -= maxalign;
+			newoff -= maxalign;
+		}
+
+		DV_order_info.simd_off2[j] = newoff;
+		/* for this SIMD size we read pad2 words after the last DV, use final padding to ensure we read in allocated memory */
+		if (pad2 > DV_order_info.finalpad)
+			DV_order_info.finalpad = pad2;
+		/* but except for the last row, we can wrap-around, so we can remove padding in multiples of maxalign */
+		pad2 %= maxalign;
+		if (pad2 > DV_order_info.pad2)
+			DV_order_info.pad2 = pad2;
+
 	}
+	/* remove regular row padding from final table padding */
+	DV_order_info.finalpad -= DV_order_info.pad2;
+
 	return weight;
 }
 
@@ -96,8 +151,20 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 	int i,j;
 	int totok58 = 0, totok65 = 0;
 	int overlap, bestoverlap, bestweight, cnt58, cnt65, weight;
-	int best58first = 0, bestpadding = 0, endpadding;
+	int best58first = 0, bestpadding = 0, nrcols;
 	FILE* fd;
+	DV_info_t* ordered_DVS[256];
+	DV_info_t pad_DV;
+
+	pad_DV.dvType = 0;
+	pad_DV.dvK = 0;
+	pad_DV.dvB = 0;
+	for (i = 0; i < 80; ++i)
+		pad_DV.dm[i] = 0;
+	pad_DV.ok58 = 0;
+	pad_DV.ok65 = 0;
+	for (i=0; i < 256; ++i)
+		ordered_DVS[i] = & pad_DV;
 
 	/* Compute overlap */
 	for (i = 0; i < nrdvs; ++i)
@@ -153,7 +220,7 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 
 	bestweight = 1<<20;
 	best58first = 1;
-	bestpadding = 0;	
+	bestpadding = 0;
 	for (i = 0; i < SIMD_MAX_WORD_ALIGNMENT && i <= SIMD_MAX_CASE_PADDING; ++i)
 	{
 		weight = eval_align(0, cnt58, cnt58+i, cnt65);
@@ -174,38 +241,97 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 			bestweight = weight;
 		}
 	}
-	/* TODO: compute better endpadding based on MAX_SIMD_WORD_ALIGNMENT instead of 1<<MAX_SIMD_EXPONENT */
-	endpadding = ((1<<20) - (cnt58 + cnt65 + bestpadding)) & ((1<<MAX_SIMD_EXPONENT)-1);
+
 	if (best58first)
 	{
-		printf("Using case58(%i) padding(%i) case65(%i) padding(%i)\n", cnt58, bestpadding, cnt65, endpadding);
+		DV_order_info.first58 = 1;
+		/* recompute optimal padding for this case */
+		eval_align(0, cnt58, cnt58 + bestpadding, cnt65);
+		nrcols = cnt58 + cnt65 + DV_order_info.pad1 + DV_order_info.pad2;
+		printf("Using [case58(%i) padding(%i) case65(%i) padding(%i)]*80 + finalpadding(%i)\n", cnt58, bestpadding, cnt65, DV_order_info.pad2, DV_order_info.finalpad);
+		for (i=0,j=0; i < nrdvs; ++i)
+			if (DVS[i].ok58)
+				ordered_DVS[j++] = DVS+i;
+		j += DV_order_info.pad1;
+		for (i=0; i < nrdvs; ++i)
+			if (DVS[i].ok65)
+				ordered_DVS[j++] = DVS+i;
+		j += DV_order_info.pad2;
+		if (j != nrcols)
+			parse_error("j != nrdvs");
 	} else {
-		printf("Using case65(%i) padding(%i) case58(%i) padding(%i)\n", cnt65, bestpadding, cnt58, endpadding);
+		DV_order_info.first58 = 0;
+		/* recompute optimal padding for this case */
+		eval_align(0, cnt65, cnt65 + bestpadding, cnt58);
+		nrcols = cnt58 + cnt65 + DV_order_info.pad1 + DV_order_info.pad2;
+		printf("Using [case65(%i) padding(%i) case58(%i) padding(%i)]*80 + finalpadding(%i)\n", cnt65, bestpadding, cnt58, DV_order_info.pad2, DV_order_info.finalpad);
+		for (i=0,j=0; i < nrdvs; ++i)
+			if (DVS[i].ok65)
+				ordered_DVS[j++] = DVS+i;
+		j += DV_order_info.pad1;
+		for (i=0; i < nrdvs; ++i)
+			if (DVS[i].ok58)
+				ordered_DVS[j++] = DVS+i;
+		j += DV_order_info.pad2;
+		if (j != nrcols)
+			parse_error("j != nrdvs");
+	}
+	for (j = 1; j <= MAX_SIMD_EXPONENT; ++j)
+	{
+		printf("SIMD %4i: off1=0 off2=%i\n", (32<<j), DV_order_info.simd_off2[j]);
 	}
 
 	/* Output code */
 	fd = fopen("lib/simd/dvs_simd.h", "w");
 	if (fd == NULL)
 		parse_error("Cannot open output file to write");
-	fprintf(fd, 
+	fprintf(fd,
 		"/***\n"
 		"* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>, Dan Shumow <danshu@microsoft.com>\n"
 		"* Distributed under the MIT Software License.\n"
 		"* See accompanying file LICENSE.txt or copy at\n"
 		"* https://opensource.org/licenses/MIT\n"
 		"***/\n\n"
+		"#ifndef SHA1DC_DVS_SIMD_HEADER\n"
+		"#define SHA1DC_DVS_SIMD_HEADER\n\n"
 		"#include <stdlib.h>\n"
-		"#include <stdint.h>\n"
-		"#define SHA1DC_SIMD_NRDVS (%i)\n"
-		"#define SHA1DC_SIMD_TABLESIZE (%i)\n"
-		"extern uint32_t sha1_dm_interleaved[80][SHA1DC_SIMD_TABLESIZE];\n"
-		, nrdvs, nrdvs+16);
-
+		"#include <stdint.h>\n\n"
+		"#define SHA1DC_SIMD_NRDVS (%i)\n" /*nrdvs*/
+		"#define SHA1DC_SIMD_TABLESIZE (%i)\n" /*nrdvs+pad1+pad2*/
+		"#define SHA1DC_SIMD_FINALPADDING (%i)\n" /*finalpad*/
+		,
+		nrdvs, nrdvs+DV_order_info.pad1+DV_order_info.pad2, DV_order_info.finalpad
+		);
+	for (j = 1; j <= MAX_SIMD_EXPONENT; ++j)
+	{
+		fprintf(fd,
+			"#define SHA1DC_SIMD_%i_OFFSET58 (%i)\n" /* off1 / off2 */
+			"#define SHA1DC_SIMD_%i_OFFSET65 (%i)\n" /* off2 / off1 */
+			,
+			(1<<j), DV_order_info.first58 ? 0 : DV_order_info.simd_off2[j],
+			(1<<j), DV_order_info.first58 ? DV_order_info.simd_off2[j] : 0
+			);
+	}
+	fprintf(fd,
+		"\ntypedef struct {\n"
+		"    uint32_t dm[80][SHA1DC_SIMD_TABLESIZE];\n"
+		"    uint32_t mask58[SHA1DC_SIMD_TABLESIZE+SHA1DC_SIMD_FINALPADDING];\n"
+		"    uint32_t mask65[SHA1DC_SIMD_TABLESIZE+SHA1DC_SIMD_FINALPADDING];\n"
+		);
+	fprintf(fd,
+		"    int dvType[SHA1DC_SIMD_TABLESIZE+SHA1DC_SIMD_FINALPADDING];\n"
+		"    int dvK[SHA1DC_SIMD_TABLESIZE+SHA1DC_SIMD_FINALPADDING];\n"
+		"    int dvB[SHA1DC_SIMD_TABLESIZE+SHA1DC_SIMD_FINALPADDING];\n"
+		"    } sha1_dvs_interleaved_t;\n"
+		"extern const sha1_dvs_interleaved_t sha1_dvs_interleaved;\n\n"
+		"#endif /* SHA1DC_DVS_SIMD_HEADER */\n"
+		);
 	fclose(fd);
+
 	fd = fopen("lib/simd/dvs_simd.c", "w");
 	if (fd == NULL)
 		parse_error("Cannot open output file to write");
-	fprintf(fd, 
+	fprintf(fd,
 		"/***\n"
 		"* Copyright 2017 Marc Stevens <marc@marc-stevens.nl>, Dan Shumow <danshu@microsoft.com>\n"
 		"* Distributed under the MIT Software License.\n"
@@ -214,10 +340,50 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 		"***/\n\n"
 		"#include \"dvs_simd.h\"\n"
 		"#include <stdlib.h>\n"
-		"#include <stdint.h>\n"
+		"#include <stdint.h>\n\n"
+		"const sha1_dvs_interleaved_t sha1_dvs_interleaved = {\n"
+		"    {\n"
 		);
+	for (i = 0; i < 80; ++i)
+	{
+		fprintf(fd, "        {");
+		for (j = 0; j < nrcols; ++j)
+			if (ordered_DVS[j]->ok58+ordered_DVS[j]->ok65==0)
+				fprintf(fd, ", 0");
+			else
+				fprintf(fd, "%s 0x%08x", j==0?"":",", ordered_DVS[j]->dm[i]);
+		fprintf(fd, " }%s\n", i<79 ? "," : "");
+	}
+	fprintf(fd, "    },\n");
+
+	fprintf(fd, "    {");
+	for (j=0; j < nrcols+DV_order_info.finalpad; ++j)
+		fprintf(fd, "%s %s", j==0?"":",", ordered_DVS[j]->ok58 ? "0xFFFFFFFF" : (ordered_DVS[j]->ok65?"0x00000000":"0"));
+	fprintf(fd, " },\n");
+
+	fprintf(fd, "    {");
+	for (j=0; j < nrcols+DV_order_info.finalpad; ++j)
+		fprintf(fd, "%s %s", j==0?"":",", ordered_DVS[j]->ok65 ? "0xFFFFFFFF" : (ordered_DVS[j]->ok58?"0x00000000":"0"));
+	fprintf(fd, " },\n");
+
+	fprintf(fd, "    {");
+	for (j=0; j < nrcols+DV_order_info.finalpad; ++j)
+		fprintf(fd, "%s %2i", j==0?"":",", ordered_DVS[j]->dvType);
+	fprintf(fd, " },\n");
+
+	fprintf(fd, "    {");
+	for (j=0; j < nrcols+DV_order_info.finalpad; ++j)
+		fprintf(fd, "%s %2i", j==0?"":",", ordered_DVS[j]->dvK);
+	fprintf(fd, " },\n");
+
+	fprintf(fd, "    {");
+	for (j=0; j < nrcols+DV_order_info.finalpad; ++j)
+		fprintf(fd, "%s %2i", j==0?"":",", ordered_DVS[j]->dvB);
+	fprintf(fd, " }\n");
+	fprintf(fd, "};\n");
+
 	fclose(fd);
-	
+
 	return 0;
 }
 
@@ -282,7 +448,7 @@ int process_dv_list(char* filename, int maxDVs)
 		if (DV != DVS+nrdvs)
 			parse_error("huh?!?");
 		if (nrdvs >= maxDVs)
-			break;		
+			break;
 	}
 	fclose(fd);
 	return generate_code(DVS, nrdvs);

@@ -32,7 +32,7 @@ endif
 
 LIBCOMPAT=1:0:0
 
-SIMD_MAX_DVS=32
+SIMD_MAX_DVS?=32
 
 PREFIX ?= /usr/local
 BINDIR=$(PREFIX)/bin
@@ -150,13 +150,16 @@ ifeq (,$(NOSIMD))
 	@if $(MAKE) SIMDTESTFLAGS="$(NEON128FLAGS) -DTEST_NEON128 -DSHA1DC_HAVE_NEON128" simd_test >/dev/null; then $(MAKE) SIMD=NEON128 enablesimd ; else $(MAKE) SIMD=NEON128 disablesimd; fi
 endif
 	@if [ `grep "=1" Makefile.config | wc -l` -ne 0 ]; then \
-		echo "HAVE_SIMD=1" >> Makefile.config; \
-		echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h; \
+		(echo "HAVE_SIMD=1" >> Makefile.config); \
+		(echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h); \
+		cat Makefile.config; \
+		echo "\nGenerating SIMD tables: lib/simd/dvs_simd.c lib/simd/dvs_simd.h..."; \
+		($(MAKE) gen_simd_tables | grep "finalpadding" -A20 | cat) || (echo "FAILED !"); \
 	else \
-		echo "HAVE_SIMD=0" >> Makefile.config; \
-		echo "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h; \
+		(echo "HAVE_SIMD=0" >> Makefile.config); \
+		(echo "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h); \
+		cat Makefile.config; \
 	fi
-	@cat Makefile.config
 
 .PHONY: enablesimd disablesimd
 enablesimd:
