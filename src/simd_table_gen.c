@@ -296,11 +296,21 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 		"#define SHA1DC_DVS_SIMD_HEADER\n\n"
 		"#include <stdlib.h>\n"
 		"#include <stdint.h>\n\n"
+		);
+	fprintf(fd,
 		"#define SHA1DC_SIMD_NRDVS (%i)\n" /*nrdvs*/
 		"#define SHA1DC_SIMD_TABLESIZE (%i)\n" /*nrdvs+pad1+pad2*/
 		"#define SHA1DC_SIMD_FINALPADDING (%i)\n" /*finalpad*/
+		"#define SHA1DC_SIMD_OFFSET58 (%i)\n" /* off1 / off2 */
+		"#define SHA1DC_SIMD_OFFSET65 (%i)\n" /* off2 / off1 */
+		"#define SHA1DC_SIMD_END58 (%i)\n" /* off1+len1 / off2+len2 */
+		"#define SHA1DC_SIMD_END65 (%i)\n" /* off2+len2 / off1+len1 */
 		,
-		nrdvs, nrdvs+DV_order_info.pad1+DV_order_info.pad2, DV_order_info.finalpad
+		nrdvs, nrdvs+DV_order_info.pad1+DV_order_info.pad2, DV_order_info.finalpad,
+		DV_order_info.first58 ? DV_order_info.off1 : DV_order_info.off2,
+		DV_order_info.first58 ? DV_order_info.off2 : DV_order_info.off1,
+		DV_order_info.first58 ? DV_order_info.off1 + DV_order_info.len1 : DV_order_info.off2 + DV_order_info.len2,
+		DV_order_info.first58 ? DV_order_info.off2 + DV_order_info.len2 : DV_order_info.off1 + DV_order_info.len1
 		);
 	for (j = 1; j <= MAX_SIMD_EXPONENT; ++j)
 	{
