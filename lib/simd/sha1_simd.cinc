@@ -10,6 +10,8 @@
 
 #include "ubc_check.h"
 
+#include "dvs_simd.h"
+
 #define sha1_f1(b,c,d) SIMD_XOR_VV(d,SIMD_AND_VV(b,SIMD_XOR_VV(c,d)))
 #define sha1_f2(b,c,d) SIMD_XOR_VV(b,SIMD_XOR_VV(c,d))
 #define sha1_f3(b,c,d) SIMD_OR_VV(SIMD_AND_VV(b,SIMD_OR_VV(c,d)),SIMD_AND_VV(c,d))
@@ -949,13 +951,13 @@ sha1_recompression_simd_type SHA1_RECOMPRESSION_TABLE_SIMD [80] =
 	SHA1_RECOMPRESSION_SIMD(70), SHA1_RECOMPRESSION_SIMD(71), SHA1_RECOMPRESSION_SIMD(72), SHA1_RECOMPRESSION_SIMD(73), SHA1_RECOMPRESSION_SIMD(74), SHA1_RECOMPRESSION_SIMD(75), SHA1_RECOMPRESSION_SIMD(76), SHA1_RECOMPRESSION_SIMD(77), SHA1_RECOMPRESSION_SIMD(78), SHA1_RECOMPRESSION_SIMD(79),
 };
 
-void SHA1_APPLY_MESSAGE_DIFFERENCES(const uint32_t me[80], const SIMD_WORD dm[80], SIMD_WORD dme[80])
+void SHA1_APPLY_MESSAGE_DIFFERENCES(const uint32_t me[80], const SIMD_WORD* dm, SIMD_WORD dme[80])
 {
 	size_t i;
 
-	for (i = 0; i < 80; i++)
+	for (i = 0; i < 80; i++, dm += SHA1DC_SIMD_TABLESIZE)
 	{
-		dme[i] = SIMD_XOR_VW(dm[i], me[i]);
+		dme[i] = SIMD_XOR_VW(*dm, me[i]);
 	}
 }
 
