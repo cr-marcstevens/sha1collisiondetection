@@ -31,6 +31,8 @@
 #sha1 collision detection specific config files.
 Makefile.config
 lib/simd/config.h
+lib/simd/dvs_simd.c
+lib/simd/dvs_simd.h
 
 # sha1 collision detection specific build directories
 bin/

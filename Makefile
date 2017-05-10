@@ -14,8 +14,10 @@ endif
 # if Makefile.config does not exist, create empty lib/simd/config.h and warn
 ifeq (,$(wildcard Makefile.config))
 $(shell echo > lib/simd/config.h)
-ifneq (config,$(MAKECMDGOALS))
-$(error Run 'make config' or 'make NOSIMD=1 config' first)
+$(shell echo > lib/simd/dvs_simd.h)
+$(shell echo > lib/simd/dvs_simd.c)
+ifeq (,$(filter config clean,$(MAKECMDGOALS)))
+$(error Run 'make [NOSIMD=1] [SIMD_MAX_DVS=32] config' first)
 endif
 endif
 
@@ -31,6 +33,8 @@ endif
 #    then set age to 0.
 
 LIBCOMPAT=1:0:0
+
+SIMD_MAX_DVS?=32
 
 PREFIX ?= /usr/local
 BINDIR=$(PREFIX)/bin
@@ -92,7 +96,7 @@ SRC_OBJ_DIR=obj_src
 
 H_DEP:=$(shell find . -type f -name "*.h")
 FS_LIB=$(wildcard $(LIB_DIR)/*.c)
-FS_SRC=$(wildcard $(SRC_DIR)/*.c)
+FS_SRC=$(wildcard $(SRC_DIR)/main.c)
 FS_SIMD_LIB=
 
 ifeq ($(HAVE_SIMD),1)
@@ -140,6 +144,8 @@ all: library tools
 config:
 	@echo > lib/simd/config.h
 	@echo > Makefile.config
+	@echo > lib/simd/dvs_simd.h
+	@echo > lib/simd/dvs_simd.c
 ifeq (,$(NOSIMD))
 	@if $(MAKE) SIMDTESTFLAGS="$(MMX64FLAGS)   -DTEST_MMX64   -DSHA1DC_HAVE_MMX64"   simd_test >/dev/null; then $(MAKE) SIMD=MMX64   enablesimd ; else $(MAKE) SIMD=MMX64   disablesimd; fi
 	@if $(MAKE) SIMDTESTFLAGS="$(SSE128FLAGS)  -DTEST_SSE128  -DSHA1DC_HAVE_SSE128"  simd_test >/dev/null; then $(MAKE) SIMD=SSE128  enablesimd ; else $(MAKE) SIMD=SSE128  disablesimd; fi
@@ -148,13 +154,16 @@ ifeq (,$(NOSIMD))
 	@if $(MAKE) SIMDTESTFLAGS="$(NEON128FLAGS) -DTEST_NEON128 -DSHA1DC_HAVE_NEON128" simd_test >/dev/null; then $(MAKE) SIMD=NEON128 enablesimd ; else $(MAKE) SIMD=NEON128 disablesimd; fi
 endif
 	@if [ `grep "=1" Makefile.config | wc -l` -ne 0 ]; then \
-		echo "HAVE_SIMD=1" >> Makefile.config; \
-		echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h; \
+		(echo "HAVE_SIMD=1" >> Makefile.config); \
+		(echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h); \
+		cat Makefile.config; \
+		echo "\nGenerating SIMD tables using max $(SIMD_MAX_DVS) DVs: lib/simd/dvs_simd.c lib/simd/dvs_simd.h..."; \
+		($(MAKE) gen_simd_tables | grep "finalpadding" -A20 | cat) || (echo "FAILED !"); \
 	else \
-		echo "HAVE_SIMD=0" >> Makefile.config; \
-		echo "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h; \
+		(echo "HAVE_SIMD=0" >> Makefile.config); \
+		(echo "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h); \
+		cat Makefile.config; \
 	fi
-	@cat Makefile.config
 
 .PHONY: enablesimd disablesimd
 enablesimd:
@@ -183,14 +192,13 @@ uninstall:
 
 .PHONY: clean
 clean:
-	-rm -rf bin Makefile.config lib/simd/config.h dep_lib obj_lib dep_src obj_src
+	-rm -rf bin Makefile.config lib/simd/config.h lib/simd/dvs_simd.* dep_lib obj_lib dep_src obj_src
 	-find . -type f -name '*.a' -print -delete
 	-find . -type f -name '*.d' -print -delete
 	-find . -type f -name '*.o' -print -delete
 	-find . -type f -name '*.la' -print -delete
 	-find . -type f -name '*.lo' -print -delete
 	-find . -type f -name '*.so' -print -delete
-	-find . -type d -name '.libs' -print | xargs rm -rv
 
 .PHONY: test
 test: tools
@@ -233,6 +241,15 @@ bin/sha1dcsum: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 
 bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum_partialcoll
+
+
+bin/simd_table_gen: $(SRC_OBJ_DIR)/simd_table_gen.lo
+	$(MKDIR) $(shell dirname $@)
+	$(LD) $(LDFLAGS) $(SRC_OBJ_DIR)/simd_table_gen.lo -Lbin -o bin/simd_table_gen
+
+.PHONY: gen_simd_tables
+gen_simd_tables: bin/simd_table_gen
+	bin/simd_table_gen src/DV_data.txt $(SIMD_MAX_DVS)
 
 
 $(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c

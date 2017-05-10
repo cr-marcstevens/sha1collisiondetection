@@ -7,13 +7,15 @@
 #ifndef SHA1DC_SHA1_SIMD_H
 #define SHA1DC_SHA1_SIMD_H
 
+#include "config.h"
+
 typedef enum {
-	simd_type_mmx64 = 0,
-        simd_type_sse128,
-        simd_type_neon128,
-        simd_type_avx256,
-        simd_type_avx512,
-        simd_type_unknown = 0xff
+    simd_type_mmx64 = 0,
+    simd_type_sse128,
+    simd_type_neon128,
+    simd_type_avx256,
+    simd_type_avx512,
+    simd_type_unknown = 0xff
 } simd_type;
 
 typedef void (*sha1_recompression_simd_fn)(void*, void*,  const void*, const void*);
@@ -37,7 +39,7 @@ typedef struct {
 #endif
 
 #ifdef SHA1DC_HAVE_SSE128
-    #define SHA1DC_SSE128 (1)_
+    #define SHA1DC_SSE128 (1)
     extern sha1_simd_implementation_t sha1_simd_sse128_implementation;
 #else
     #define SHA1DC_SSE128 (0)
