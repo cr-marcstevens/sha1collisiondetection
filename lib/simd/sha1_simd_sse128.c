@@ -22,6 +22,7 @@
 #define SHA1_RECOMPRESSION_TABLE_SIMD   sha1_recompression_step_sse128
 #define SHA1_APPLY_MESSAGE_DIFFERENCES	sha1_apply_message_differences_sse128
 #define SHA1_COMPARE_DIGESTS            sha1_compare_digests_sse128
+#define SHA1_SET_LANES                  sha1_set_lanes_sse128
 
 #include "sha1_simd.cinc"
 
@@ -32,7 +33,8 @@ sha1_simd_implementation_t sha1_simd_sse128_implementation =
 	(sha1_recompression_simd_fn)sha1_recompress_fast_58_sse128,
 	(sha1_recompression_simd_fn)sha1_recompress_fast_65_sse128,
 	(sha1_apply_message_differences_simd_fn)sha1_apply_message_differences_sse128,
-	(sha1_compare_digests_simd_fn)sha1_compare_digests_sse128
+	(sha1_compare_digests_simd_fn)sha1_compare_digests_sse128,
+    (sha1_set_lanes_simd_fn)sha1_set_lanes_sse128
 };
 
 #else

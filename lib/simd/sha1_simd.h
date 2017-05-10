@@ -21,6 +21,7 @@ typedef enum {
 typedef void (*sha1_recompression_simd_fn)(void*, void*,  const void*, const void*);
 typedef void (*sha1_apply_message_differences_simd_fn)(const uint32_t me[80], const void*, void*);
 typedef void (*sha1_compare_digests_simd_fn)(const SHA1_CTX* ctx, const void*, const void*, void*);
+typedef void (*sha1_set_lanes_simd_fn)(uint32_t, void*);
 
 typedef struct {
     simd_type                                   type;
@@ -29,6 +30,7 @@ typedef struct {
     sha1_recompression_simd_fn                  sha1_recompression_fast_65;
     sha1_apply_message_differences_simd_fn      sha1_apply_message_differences;
     sha1_compare_digests_simd_fn                sha1_compare_digests;
+    sha1_set_lanes_simd_fn                      sha1_set_lanes;
 } sha1_simd_implementation_t;
 
 #ifdef SHA1DC_HAVE_MMX64

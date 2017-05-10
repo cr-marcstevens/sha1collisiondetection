@@ -23,7 +23,7 @@
 #define SHA1_RECOMPRESSION_TABLE_SIMD   sha1_recompression_step_avx512
 #define SHA1_APPLY_MESSAGE_DIFFERENCES  sha1_apply_message_differences_avx512
 #define SHA1_COMPARE_DIGESTS            sha1_compare_digests_avx512
-
+#define SHA1_SET_LANES                  sha1_set_lanes_avx512
 
 #include "sha1_simd.cinc"
 
@@ -35,6 +35,7 @@ sha1_simd_implementation_t sha1_simd_avx512_implementation =
 	(sha1_recompression_simd_fn)sha1_recompress_fast_65_avx512,
 	(sha1_apply_message_differences_simd_fn)sha1_apply_message_differences_avx512,
 	(sha1_compare_digests_simd_fn)sha1_compare_digests_avx512
+    (sha1_set_lanes_simd_fn)sha1_set_lanes_avx512
 };
 
 

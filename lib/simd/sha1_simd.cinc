@@ -995,3 +995,8 @@ void SHA1_COMPARE_DIGESTS(const SHA1_CTX* ctx, const SIMD_WORD ihv_full_collisio
 
 	*collision_detected = result;
 }
+
+void SHA1_SET_LANES(uint32_t x, SIMD_WORD* simd_x)
+{
+    *simd_x = SIMD_WTOV(x);
+}
