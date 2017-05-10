@@ -71,11 +71,28 @@ typedef struct {
 
 static dv_table_info_t dv_table_info[5] = 
 {
+#ifdef SHA1DC_SIMD_2_OFFSET58
     { SHA1DC_SIMD_2_OFFSET58, SHA1DC_SIMD_2_OFFSET65 }, /* MMX64 */
+#else
+    { 0, 0 },
+#endif
+#ifdef SHA1DC_SIMD_4_OFFSET58
     { SHA1DC_SIMD_4_OFFSET58, SHA1DC_SIMD_4_OFFSET65 }, /* NEON128 */
     { SHA1DC_SIMD_4_OFFSET58, SHA1DC_SIMD_4_OFFSET65 }, /* SSE128 */
+#else
+    { 0, 0 },
+    { 0, 0 },
+#endif
+#ifdef SHA1DC_SIMD_8_OFFSET58
     { SHA1DC_SIMD_8_OFFSET58, SHA1DC_SIMD_8_OFFSET65 }, /* AVX256 */
+#else
+    { 0, 0 },
+#endif
+#ifdef SHA1DC_SIMD_16_OFFSET58
     { SHA1DC_SIMD_16_OFFSET58, SHA1DC_SIMD_16_OFFSET65 } /* AVX512 */
+#else
+    { 0, 0 }
+#endif
 };
 
 static void initialize_simd()
