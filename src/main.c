@@ -60,6 +60,12 @@ int main(int argc, char** argv)
 			SHA1DCSetDetectReducedRoundCollision(&ctx2, 1);
 		}
 
+        if (NULL != strstr(argv[0], "simd"))
+        {
+            ctx2.simd = 2;
+            SHA1DCSetUseUBC(&ctx2, 0);
+        }
+
 		if(!strcmp(argv[i],"-")) {
 			fd = stdin;
 		} else {
