@@ -66,22 +66,18 @@ NEON128FLAGS=-mfpu=neon
 CFLAGS+=$(TARGETCFLAGS)
 LDFLAGS+=$(TARGETLDFLAGS)
 
-
+ifneq (, $(shell which $(LIBTOOL) 2>/dev/null ))
 LT_CC:=$(LIBTOOL) --tag=CC --mode=compile $(CC)
 LT_CC_DEP:=$(CC)
 LT_LD:=$(LIBTOOL) --tag=CC --mode=link $(CC)
 LT_INSTALL:=$(LIBTOOL) --tag=CC --mode=install $(INSTALL)
-
-ifneq (, $(shell which $(LIBTOOL) 2>/dev/null ))
-CC:=$(LT_CC)
-CC_DEP:=$(LT_CC_DEP)
-LD:=$(LT_LD)
-LDLIB:=$(LT_LD)
 LIB_EXT:=la
 else
-LIB_EXT:=a
-LD:=$(CC)
+LT_CC:=$(CC)
+LT_CC_DEP:=$(CC_DEP)
+LT_LD:=$(LD)
 LT_INSTALL:=$(INSTALL)
+LIB_EXT:=a
 endif
 
 LIB_DIR=lib
@@ -158,7 +154,7 @@ endif
 		(echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h); \
 		cat Makefile.config; \
 		echo "\nGenerating SIMD tables using max $(SIMD_MAX_DVS) DVs: lib/simd/dvs_simd.c lib/simd/dvs_simd.h..."; \
-		($(MAKE) gen_simd_tables | grep "finalpadding" -A20 | cat) || (echo "FAILED !"); \
+		($(MAKE) gen_simd_tables  | grep "finalpadding" -A20 | cat) || (echo "FAILED !"); \
 	else \
 		(echo "HAVE_SIMD=0" >> Makefile.config); \
 		(echo "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h); \
@@ -230,48 +226,49 @@ library: bin/libsha1detectcoll.$(LIB_EXT)
 
 bin/libsha1detectcoll.la: $(FS_OBJ_LIB) $(FS_OBJ_SIMD_LIB)
 	$(MKDIR) $(shell dirname $@)
-	$(LDLIB) $(LDFLAGS) $(FS_OBJ_LIB) $(FS_OBJ_SIMD_LIB) -rpath $(LIBDIR) -version-info $(LIBCOMPAT) -o bin/libsha1detectcoll.la
+	$(LT_LD) $(LDFLAGS) $(FS_OBJ_LIB) $(FS_OBJ_SIMD_LIB) -rpath $(LIBDIR) -version-info $(LIBCOMPAT) -o bin/libsha1detectcoll.la
 	
 bin/libsha1detectcoll.a: $(FS_OBJ_LIB) $(FS_OBJ_SIMD_LIB)
 	$(MKDIR) $(shell dirname $@)
 	$(AR) cru bin/libsha1detectcoll.a $(FS_OBJ_LIB) $(FS_OBJ_SIMD_LIB)
 
 bin/sha1dcsum: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
-	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum
+	$(LT_LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum
 
 bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
-	$(LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum_partialcoll
+	$(LT_LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum_partialcoll
 
 
 bin/simd_table_gen: $(SRC_OBJ_DIR)/simd_table_gen.lo
 	$(MKDIR) $(shell dirname $@)
-	$(LD) $(LDFLAGS) $(SRC_OBJ_DIR)/simd_table_gen.lo -Lbin -o bin/simd_table_gen
+	$(LT_LD) $(LDFLAGS) $< -o $@
 
 .PHONY: gen_simd_tables
 gen_simd_tables: bin/simd_table_gen
-	bin/simd_table_gen src/DV_data.txt $(SIMD_MAX_DVS)
+	$< src/DV_data.txt $(SIMD_MAX_DVS)
 
 
 $(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
 	$(MKDIR) $(shell dirname $@)
-	$(CC_DEP) $(CFLAGS) -M -MF $@ $<
+	$(LT_CC_DEP) $(CFLAGS) -M -MF $@ $<
 
 $(SRC_OBJ_DIR)/%.lo ${SRC_OBJ_DIR}/%.o: ${SRC_DIR}/%.c ${SRC_DEP_DIR}/%.d $(H_DEP)
 	$(MKDIR) $(shell dirname $@)
-	$(CC) $(CFLAGS) -o $@ -c $<
+	$(LT_CC) $(CFLAGS) -o $@ -c $<
 
 
 $(LIB_DEP_DIR)/%.d: $(LIB_DIR)/%.c
 	$(MKDIR) $(shell dirname $@)
-	$(CC_DEP) $(CFLAGS) -M -MF $@ $<
+	$(LT_CC_DEP) $(CFLAGS) -M -MF $@ $<
 
 $(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d $(H_DEP)
 	$(MKDIR) $(shell dirname $@)
-	$(CC) $(CFLAGS) -o $@ -c $<
+	$(LT_CC) $(CFLAGS) -o $@ -c $<
 
+
+# try to compile lib/simd/simd_test.c with SIMDTESTFLAGS added to CFLAGS
 .PHONY: simd_test
-simd_test:
-	$(MKDIR) $(LIB_OBJ_DIR)/simd
-	$(CC) $(CFLAGS) $(SIMDTESTFLAGS) -o $(LIB_OBJ_DIR)/simd/simd_test.lo -c $(LIB_DIR)/simd/simd_test.c
+simd_test: CFLAGS+=$(SIMDTESTFLAGS)
+simd_test: $(LIB_OBJ_DIR)/simd/simd_test.lo
 
 -include $(FS_DEP)
