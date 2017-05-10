@@ -1627,6 +1627,7 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 #ifdef SHA1DC_HAVE_SIMD
 	if (ctx->ubc_check == 0 && ctx->simd > 0)
 	{
+		fprintf(stderr, "calling simd code");
 		sha1_process_simd(ctx, block);
 		return;
 	}

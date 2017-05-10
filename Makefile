@@ -55,7 +55,7 @@ endif
 
 MKDIR=mkdir -p
 
-CFLAGS=-O2 -Wall -Werror -Wextra -pedantic -std=c90 -Ilib
+CFLAGS= -Wall -Werror -Wextra -pedantic -std=c90 -Ilib -g -ggdb
 LDFLAGS=
 MMX64FLAGS=-mmmx
 SSE128FLAGS=-msse -msse2
@@ -212,7 +212,7 @@ test: tools
 check: test
 
 .PHONY: tools
-tools: sha1dcsum sha1dcsum_partialcoll
+tools: sha1dcsum sha1dcsum_partialcoll sha1dcsum_simd
 
 .PHONY: sha1dcsum
 sha1dcsum: bin/sha1dcsum
@@ -220,6 +220,8 @@ sha1dcsum: bin/sha1dcsum
 .PHONY: sha1dcsum_partialcoll
 sha1dcsum_partialcoll: bin/sha1dcsum_partialcoll
 
+.PHONY: sha1dcsum_simd
+sha1dcsum_simd: bin/sha1dcsum_simd
 
 .PHONY: library
 library: bin/libsha1detectcoll.$(LIB_EXT)
@@ -237,6 +239,9 @@ bin/sha1dcsum: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 
 bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 	$(LT_LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum_partialcoll
+
+bin/sha1dcsum_simd: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
+	$(LT_LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum_simd
 
 
 bin/simd_table_gen: $(SRC_OBJ_DIR)/simd_table_gen.lo

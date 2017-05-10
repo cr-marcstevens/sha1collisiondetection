@@ -968,9 +968,10 @@ void SHA1_APPLY_MESSAGE_DIFFERENCES(const uint32_t me[80], const SIMD_WORD* dm, 
 {
 	size_t i;
 
-	for (i = 0; i < 80; i++, dm += SHA1DC_SIMD_TABLESIZE)
+	for (i = 0; i < 80; ++i)
 	{
 		dme[i] = SIMD_XOR_VW(*dm, me[i]);
+		dm = (const SIMD_WORD*)((const uint32_t*)(dm) + SHA1DC_SIMD_TABLESIZE);
 	}
 }
 
