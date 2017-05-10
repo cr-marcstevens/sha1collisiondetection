@@ -10,8 +10,9 @@
 
 #include "sha1.h"
 #include "sha1_simd.h"
+#include "dvs_simd.h"
 
-
+/*
 #define CNT_SHA1_DVS (16)
 uint32_t sha1_dvs_interleaved[80][CNT_SHA1_DVS] = 
 {
@@ -104,6 +105,7 @@ size_t offset58 = 0;
 size_t offset65 = 0;
 size_t len58 = 0;
 size_t len65 = 0;
+*/
 
 /* volatile char should have atomic writes. */
 volatile char simd_index = -1;
