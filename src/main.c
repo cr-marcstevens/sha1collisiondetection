@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #ifndef _WIN32
 #include <libgen.h>
 #endif
@@ -45,7 +46,7 @@ int main(int argc, char** argv)
 
 	if (argc < 2)
 	{
-		printf("Usage: %s <file>\n", basename(argv[0]));
+		fprintf(stderr, "Usage: %s <file>\n", basename(argv[0]));
 		return 1;
 	}
 
@@ -59,10 +60,14 @@ int main(int argc, char** argv)
 			SHA1DCSetDetectReducedRoundCollision(&ctx2, 1);
 		}
 
-		fd = fopen(argv[i], "rb");
+		if(!strcmp(argv[i],"-")) {
+			fd = stdin;
+		} else {
+			fd = fopen(argv[i], "rb");
+		}
 		if (fd == NULL)
 		{
-			printf("cannot open file: %s\n", argv[i]);
+			fprintf(stderr, "cannot open file: %s: %s\n", argv[i], strerror(errno));
 			return 1;
 		}
 
@@ -75,12 +80,12 @@ int main(int argc, char** argv)
 		}
 		if (ferror(fd))
 		{
-			printf("error while reading file: %s\n", argv[i]);
+			fprintf(stderr, "error while reading file: %s: %s\n", argv[i], strerror(errno));
 			return 1;
 		}
 		if (!feof(fd))
 		{
-			printf("not end of file?: %s\n",argv[i]);
+			fprintf(stderr, "not end of file?: %s: %s\n", argv[i], strerror(errno));
 			return 1;
 		}
 
