@@ -8,6 +8,7 @@
 
 #include "sha1.h"
 #include "ubc_check.h"
+#include "simd/simd_config.h"
 
 #include <string.h>
 #include <memory.h>
@@ -1622,7 +1623,15 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	unsigned i, j;
 	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0xFFFFFFFF };
 	uint32_t ihvtmp[5];
-	
+
+#ifdef SHA1DC_HAVE_SIMD
+	if (ctx->ubc_check == 0 && ctx->simd > 0)
+	{
+		sha1_process_simd(ctx, block);
+		return;
+	}
+#endif
+
 	ctx->ihv1[0] = ctx->ihv[0];
 	ctx->ihv1[1] = ctx->ihv[1];
 	ctx->ihv1[2] = ctx->ihv[2];
@@ -1655,6 +1664,11 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 					{
 						ctx->found_collision = 1;
 
+						if (ctx->callback != NULL)
+						{
+							ctx->callback(ctx->total - 64, ctx->ihv1, ctx->ihv2, ctx->m1, ctx->m2, ctx->callback_data);
+						}
+
 						if (ctx->safe_hash)
 						{
 							sha1_compression_W(ctx->ihv, ctx->m1);
@@ -1683,6 +1697,12 @@ void SHA1DCInit(SHA1_CTX* ctx)
 	ctx->detect_coll = 1;
 	ctx->reduced_round_coll = 0;
 	ctx->callback = NULL;
+	ctx->callback_data = NULL;
+#ifdef SHA1DC_HAVE_SIMD
+	ctx->simd = SHA1DC_get_simd();
+#else
+	ctx->simd = -1;
+#endif
 }
 
 void SHA1DCSetSafeHash(SHA1_CTX* ctx, int safehash)
@@ -1718,9 +1738,10 @@ void SHA1DCSetDetectReducedRoundCollision(SHA1_CTX* ctx, int reduced_round_coll)
 		ctx->reduced_round_coll = 0;
 }
 
-void SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback)
+void SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback, void* callback_data)
 {
 	ctx->callback = callback;
+	ctx->callback_data = callback_data;
 }
 
 void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)

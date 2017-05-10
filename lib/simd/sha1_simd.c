@@ -82,7 +82,7 @@ void initialize_simd()
 	/* TODO Put configuration code here. */
 }
 
-size_t get_simd_index()
+size_t SHA1DC_get_simd()
 {
 	if ((char)-1 == simd_index)
 	{
@@ -96,7 +96,7 @@ void sha1_recompress_fast_58_simd(void* ihvin, void* ihvout, const void* me, voi
 {
 	size_t i;
 	
-	i = get_simd_index();
+	i = SHA1DC_get_simd();
 
 	if ((i < SIMD_IMPLEMENTATION_CNT) &&
 		(NULL != simd_implementation_table[i]))
@@ -109,7 +109,7 @@ void sha1_recompress_fast_65_simd(void* ihvin, void* ihvout, const void* me, voi
 {
 	size_t i;
 
-	i = get_simd_index();
+	i = SHA1DC_get_simd();
 
 	if ((i < SIMD_IMPLEMENTATION_CNT) &&
 		(NULL != simd_implementation_table[i]))
@@ -122,7 +122,7 @@ void sha1_apply_message_differences_simd(const uint32_t me[80], const void* dm, 
 {
 	size_t i;
 
-	i = get_simd_index();
+	i = SHA1DC_get_simd();
 
 	if ((i < SIMD_IMPLEMENTATION_CNT) &&
 		(NULL != simd_implementation_table[i]))
@@ -135,7 +135,7 @@ void sha1_compare_digests_simd(const SHA1_CTX* ctx, const void* ihv_full_collisi
 {
 	size_t i;
 
-	i = get_simd_index();
+	i = SHA1DC_get_simd();
 
 	if ((i < SIMD_IMPLEMENTATION_CNT) &&
 		(NULL != simd_implementation_table[i]))
@@ -144,14 +144,16 @@ void sha1_compare_digests_simd(const SHA1_CTX* ctx, const void* ihv_full_collisi
 	}
 }
 
-#if 0
-static void sha1_process_simd(SHA1_CTX* ctx, const uint32_t block[16])
+void sha1_process_simd(SHA1_CTX* ctx, const uint32_t block[16])
 {
 	ctx->ihv1[0] = ctx->ihv[0];
 	ctx->ihv1[1] = ctx->ihv[1];
 	ctx->ihv1[2] = ctx->ihv[2];
 	ctx->ihv1[3] = ctx->ihv[3];
 	ctx->ihv1[4] = ctx->ihv[4];
+
+	ctx->simd = block[1]; /* DUMMY OPERATION: REMOVE ASAP */
+#if 0
 
 	sha1_compression_states(ctx->ihv, block, ctx->m1, ctx->states);
 
@@ -178,5 +180,5 @@ static void sha1_process_simd(SHA1_CTX* ctx, const uint32_t block[16])
 			}
 		}
 	}
-}
 #endif
+}

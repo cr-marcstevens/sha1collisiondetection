@@ -2,6 +2,12 @@
 #define SHA1DC_SIMD_CONFIG_H
 
 #include "config.h"
+#include "../sha1.h"
+
+#ifdef SHA1DC_HAVE_SIMD
+int SHA1DC_get_simd();
+void sha1_process_simd(SHA1_CTX* ctx, const uint32_t block[16]);
+#endif
 
 #define MMX64_PRESENT_MASK (0x00000001)
 #define NEON128_PRESENT_MASK (0x00000002)

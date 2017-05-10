@@ -32,7 +32,7 @@ endif
 # 4. If any interfaces have been removed or changed since the last public release,
 #    then set age to 0.
 
-LIBCOMPAT=1:0:0
+LIBCOMPAT=2:0:0
 
 SIMD_MAX_DVS?=32
 

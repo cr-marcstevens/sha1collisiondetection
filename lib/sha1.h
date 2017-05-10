@@ -31,8 +31,8 @@ void sha1_compression_states(uint32_t[5], const uint32_t[16], uint32_t[80], uint
 typedef void(*sha1_recompression_type)(uint32_t*, uint32_t*, const uint32_t*, const uint32_t*);
 
 /* A callback function type that can be set to be called when a collision block has been found: */
-/* void collision_block_callback(uint64_t byteoffset, const uint32_t ihvin1[5], const uint32_t ihvin2[5], const uint32_t m1[80], const uint32_t m2[80]) */
-typedef void(*collision_block_callback)(uint64_t, const uint32_t*, const uint32_t*, const uint32_t*, const uint32_t*);
+/* void collision_block_callback(uint64_t byteoffset, const uint32_t ihvin1[5], const uint32_t ihvin2[5], const uint32_t m1[80], const uint32_t m2[80], void* callback_data) */
+typedef void(*collision_block_callback)(uint64_t, const uint32_t*, const uint32_t*, const uint32_t*, const uint32_t*, void*);
 
 /* The SHA-1 context. */
 typedef struct {
@@ -45,6 +45,8 @@ typedef struct {
 	int ubc_check;
 	int reduced_round_coll;
 	collision_block_callback callback;
+	void* callback_data;
+	int simd;
 
 	uint32_t ihv1[5];
 	uint32_t ihv2[5];
@@ -89,7 +91,7 @@ void SHA1DCSetDetectReducedRoundCollision(SHA1_CTX*, int);
 
 /* function to set a callback function, pass NULL to disable */
 /* by default no callback set */
-void SHA1DCSetCallback(SHA1_CTX*, collision_block_callback);
+void SHA1DCSetCallback(SHA1_CTX*, collision_block_callback, void* callback_data);
 
 /* update SHA-1 context with buffer contents */
 void SHA1DCUpdate(SHA1_CTX*, const char*, size_t);
