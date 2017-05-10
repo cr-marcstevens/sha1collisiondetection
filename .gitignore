@@ -38,3 +38,6 @@ lib/simd/dvs_simd.h
 bin/
 dep_lib/
 dep_src/
+
+#sha1 collision detection specific logs
+/test_*.log
