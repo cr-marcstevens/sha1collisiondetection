@@ -35,6 +35,17 @@
 
 #endif /*ENDIANNESS SELECTION*/
 
+#if (defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || \
+     defined(i386) || defined(__i386) || defined(__i386__) || defined(__i486__)  || \
+     defined(__i586__) || defined(__i686__) || defined(_M_IX86) || defined(__X86__) || \
+     defined(_X86_) || defined(__THW_INTEL__) || defined(__I86__) || defined(__INTEL__) || \
+     defined(__386) || defined(_M_X64) || defined(_M_AMD64))
+
+#define SHA1DC_ALLOW_UNALIGNED_ACCESS
+
+#endif /*UNALIGNMENT DETECTION*/
+
+
 #define rotate_right(x,n) (((x)>>(n))|((x)<<(32-(n))))
 #define rotate_left(x,n)  (((x)<<(n))|((x)>>(32-(n))))
 
@@ -1726,6 +1737,9 @@ void SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback)
 void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 {
 	unsigned left, fill;
+
+    const uint32_t* buffer_to_hash = NULL;
+
 	if (len == 0)
 		return;
 
@@ -1744,8 +1758,14 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 	while (len >= 64)
 	{
 		ctx->total += 64;
-		memcpy(ctx->buffer, buf, 64);
-		sha1_process(ctx, (uint32_t*)(ctx->buffer));
+
+#if defined(SHA1DC_ALLOW_UNALIGNED_ACCESS)
+        buffer_to_hash = (const uint32_t*)buf;
+#else
+        buffer_to_hash = (const uint32_t*)ctx->buffer;
+        memcpy(ctx->buffer, buf, 64);
+#endif /* defined(SHA1DC_ALLOW_UNALIGNED_ACCESS) */
+		sha1_process(ctx, buffer_to_hash);
 		buf += 64;
 		len -= 64;
 	}
