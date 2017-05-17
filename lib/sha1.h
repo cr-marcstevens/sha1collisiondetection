@@ -12,7 +12,9 @@
 extern "C" {
 #endif
 
+#ifndef SHA1DC_NO_STANDARD_INCLUDES
 #include <stdint.h>
+#endif
 
 /* sha-1 compression function that takes an already expanded message, and additionally store intermediate states */
 /* only stores states ii (the state between step ii-1 and step ii) when DOSTORESTATEii is defined in ubc_check.h */
@@ -99,6 +101,10 @@ int  SHA1DCFinal(unsigned char[20], SHA1_CTX*);
 
 #if defined(__cplusplus)
 }
+#endif
+
+#ifdef SHA1DC_CUSTOM_TRAILING_INCLUDE_SHA1_H
+#include SHA1DC_CUSTOM_TRAILING_INCLUDE_SHA1_H
 #endif
 
 #endif

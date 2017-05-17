@@ -78,3 +78,49 @@ else
     printf("no collision detected");
 ```
 
+## Inclusion in other programs
+
+In order to make it easier to include these sources in other project
+there are several preprocessor macros that the code uses. Rather than
+copy/pasting and customizing or specializing the code, first see if
+setting any of these defines appropriately will allow you to avoid
+modifying the code yourself.
+
+- SHA1DC_NO_STANDARD_INCLUDES
+
+ Skips including standard headers. Use this if your project for
+ whatever reason wishes to do its own header includes.
+
+- SHA1DC_CUSTOM_INCLUDE_SHA1_C
+
+  Includes a custom header at the top of sha1.c. Usually this would be
+  set in conjunction with SHA1DC_NO_STANDARD_INCLUDES to point to a
+  header file which includes various standard headers.
+
+- SHA1DC_INIT_SAFE_HASH_DEFAULT
+
+  Sets the default for safe_hash in SHA1DCInit(). Valid values are 0
+  and 1. If unset 1 is the default.
+
+- SHA1DC_CUSTOM_TRAILING_INCLUDE_SHA1_C
+
+  Includes a custom trailer in sha1.c. Useful for any extra utility
+  functions that make use of the functions already defined in sha1.c.
+
+- SHA1DC_CUSTOM_TRAILING_INCLUDE_SHA1_H
+
+  Includes a custom trailer in sha1.h. Useful for defining the
+  prototypes of the functions or code included by
+  SHA1DC_CUSTOM_TRAILING_INCLUDE_SHA1_C.
+
+- SHA1DC_CUSTOM_INCLUDE_UBC_CHECK_C
+
+  Includes a custom header at the top of ubc_check.c.
+
+- SHA1DC_CUSTOM_TRAILING_INCLUDE_UBC_CHECK_C
+
+  Includes a custom trailer in ubc_check.c.
+
+- SHA1DC_CUSTOM_TRAILING_INCLUDE_UBC_CHECK_H
+
+  Includes a custom trailer in ubc_check.H.
