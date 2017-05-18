@@ -24,7 +24,7 @@
 #include "ubc_check.h"
 
 
-/* 
+/*
    Because Little-Endian architectures are most common,
    we only set SHA1DC_BIGENDIAN if one of these conditions is met.
    Note that all MSFT platforms are little endian,
@@ -1643,7 +1643,7 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	unsigned i, j;
 	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0xFFFFFFFF };
 	uint32_t ihvtmp[5];
-	
+
 	ctx->ihv1[0] = ctx->ihv[0];
 	ctx->ihv1[1] = ctx->ihv[1];
 	ctx->ihv1[2] = ctx->ihv[2];
