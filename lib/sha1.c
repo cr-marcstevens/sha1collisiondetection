@@ -32,18 +32,15 @@
    If you are compiling on a big endian platform and your compiler does not define one of these,
    you will have to add whatever macros your tool chain defines to indicate Big-Endianness.
  */
-#ifdef SHA1DC_BIGENDIAN
-#undef SHA1DC_BIGENDIAN
-#endif
+#ifndef SHA1DC_BIGENDIAN
 #if (!defined SHA1DC_FORCE_LITTLEENDIAN) && \
     ((defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || \
     (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __BIG_ENDIAN__)) || \
     defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__THUMBEB__) ||  defined(__AARCH64EB__) || \
     defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__) || defined(SHA1DC_FORCE_BIGENDIAN))
-
 #define SHA1DC_BIGENDIAN
-
-#endif /*ENDIANNESS SELECTION*/
+#endif
+#endif
 
 #if (defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || \
      defined(i386) || defined(__i386) || defined(__i386__) || defined(__i486__)  || \
