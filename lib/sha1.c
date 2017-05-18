@@ -1748,8 +1748,7 @@ void SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback)
 void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 {
 	unsigned left, fill;
-
-    const uint32_t* buffer_to_hash = NULL;
+	const uint32_t* buffer_to_hash = NULL;
 
 	if (len == 0)
 		return;
@@ -1771,10 +1770,10 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 		ctx->total += 64;
 
 #if defined(SHA1DC_ALLOW_UNALIGNED_ACCESS)
-        buffer_to_hash = (const uint32_t*)buf;
+		buffer_to_hash = (const uint32_t*)buf;
 #else
-        buffer_to_hash = (const uint32_t*)ctx->buffer;
-        memcpy(ctx->buffer, buf, 64);
+		buffer_to_hash = (const uint32_t*)ctx->buffer;
+		memcpy(ctx->buffer, buf, 64);
 #endif /* defined(SHA1DC_ALLOW_UNALIGNED_ACCESS) */
 		sha1_process(ctx, buffer_to_hash);
 		buf += 64;
