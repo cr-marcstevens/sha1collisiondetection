@@ -24,7 +24,7 @@
 #include "ubc_check.h"
 
 
-/* 
+/*
    Because Little-Endian architectures are most common,
    we only set SHA1DC_BIGENDIAN if one of these conditions is met.
    Note that all MSFT platforms are little endian,
@@ -32,29 +32,25 @@
    If you are compiling on a big endian platform and your compiler does not define one of these,
    you will have to add whatever macros your tool chain defines to indicate Big-Endianness.
  */
-#ifdef SHA1DC_BIGENDIAN
-#undef SHA1DC_BIGENDIAN
-#endif
+#ifndef SHA1DC_BIGENDIAN
 #if (!defined SHA1DC_FORCE_LITTLEENDIAN) && \
     ((defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || \
     (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __BIG_ENDIAN__)) || \
     defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__THUMBEB__) ||  defined(__AARCH64EB__) || \
     defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__) || defined(SHA1DC_FORCE_BIGENDIAN))
-
 #define SHA1DC_BIGENDIAN
+#endif
+#endif
 
-#endif /*ENDIANNESS SELECTION*/
-
+#ifndef SHA1DC_ALLOW_UNALIGNED_ACCESS
 #if (defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || \
      defined(i386) || defined(__i386) || defined(__i386__) || defined(__i486__)  || \
      defined(__i586__) || defined(__i686__) || defined(_M_IX86) || defined(__X86__) || \
      defined(_X86_) || defined(__THW_INTEL__) || defined(__I86__) || defined(__INTEL__) || \
      defined(__386) || defined(_M_X64) || defined(_M_AMD64))
-
 #define SHA1DC_ALLOW_UNALIGNED_ACCESS
-
-#endif /*UNALIGNMENT DETECTION*/
-
+#endif
+#endif
 
 #define rotate_right(x,n) (((x)>>(n))|((x)<<(32-(n))))
 #define rotate_left(x,n)  (((x)<<(n))|((x)>>(32-(n))))
@@ -1643,7 +1639,7 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	unsigned i, j;
 	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0xFFFFFFFF };
 	uint32_t ihvtmp[5];
-	
+
 	ctx->ihv1[0] = ctx->ihv[0];
 	ctx->ihv1[1] = ctx->ihv[1];
 	ctx->ihv1[2] = ctx->ihv[2];
@@ -1748,8 +1744,6 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 {
 	unsigned left, fill;
 
-    const uint32_t* buffer_to_hash = NULL;
-
 	if (len == 0)
 		return;
 
@@ -1770,12 +1764,11 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 		ctx->total += 64;
 
 #if defined(SHA1DC_ALLOW_UNALIGNED_ACCESS)
-        buffer_to_hash = (const uint32_t*)buf;
+		sha1_process(ctx, (uint32_t*)(buf));
 #else
-        buffer_to_hash = (const uint32_t*)ctx->buffer;
-        memcpy(ctx->buffer, buf, 64);
+		memcpy(ctx->buffer, buf, 64);
+		sha1_process(ctx, (uint32_t*)(ctx->buffer));
 #endif /* defined(SHA1DC_ALLOW_UNALIGNED_ACCESS) */
-		sha1_process(ctx, buffer_to_hash);
 		buf += 64;
 		len -= 64;
 	}
