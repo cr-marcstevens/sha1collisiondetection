@@ -124,3 +124,22 @@ modifying the code yourself.
 - SHA1DC_CUSTOM_TRAILING_INCLUDE_UBC_CHECK_H
 
   Includes a custom trailer in ubc_check.H.
+
+This code will try to auto-detect certain things based on
+CPU/platform. Unless you're running on some really obscure CPU or
+porting to a new platform you should not need to tweak this. If you do
+please open an issue at
+https://github.com/cr-marcstevens/sha1collisiondetection
+
+- SHA1DC_FORCE_LITTLEENDIAN / SHA1DC_FORCE_BIGENDIAN
+
+  Override the check for processor endianenss and force either
+  Little-Endian or Big-Endian.
+
+- SHA1DC_FORCE_UNALIGNED_ACCESS
+
+  Permit unaligned access. This will fail on e.g. SPARC processors, so
+  it's only permitted on a whitelist of processors. If your CPU isn't
+  detected as allowing this, and allows unaligned access, setting this
+  may improve performance (or make it worse, if the kernel has to
+  catch and emulate such access on its own).
