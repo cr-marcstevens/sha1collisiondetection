@@ -34,3 +34,7 @@
 /dep_src/
 /obj_src/
 /bin/
+
+# The git.git project generates lib/.depend/ with
+# COMPUTE_HEADER_DEPENDENCIES=[auto|yes].
+.depend/
