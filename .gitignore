@@ -27,3 +27,10 @@
 *.exe
 *.out
 *.app
+
+# Generated directories
+/dep_lib/
+/obj_lib/
+/dep_src/
+/obj_src/
+/bin/
