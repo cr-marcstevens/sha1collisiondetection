@@ -1627,7 +1627,6 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 #ifdef SHA1DC_HAVE_SIMD
 	if (ctx->ubc_check == 0 && ctx->simd > 0)
 	{
-		fprintf(stderr, "calling simd code");
 		sha1_process_simd(ctx, block);
 		return;
 	}
@@ -1663,6 +1662,14 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 					if ((0 == ((ihvtmp[0] ^ ctx->ihv[0]) | (ihvtmp[1] ^ ctx->ihv[1]) | (ihvtmp[2] ^ ctx->ihv[2]) | (ihvtmp[3] ^ ctx->ihv[3]) | (ihvtmp[4] ^ ctx->ihv[4])))
 						|| (ctx->reduced_round_coll && 0==((ctx->ihv1[0] ^ ctx->ihv2[0]) | (ctx->ihv1[1] ^ ctx->ihv2[1]) | (ctx->ihv1[2] ^ ctx->ihv2[2]) | (ctx->ihv1[3] ^ ctx->ihv2[3]) | (ctx->ihv1[4] ^ ctx->ihv2[4]))))
 					{
+                        /*
+                        fprintf(stderr, "block offset: %d dv id: %d test step: %d\n", (uint32_t)(ctx->total - 64), i, sha1_dvs[i].testt);
+                        fprintf(stderr, "ihvtmp[0] = 0x%08x ihvtmp[1] = 0x%08x ihvtmp[2] = 0x%08x ihvtmp[3] = 0x%08x ihvtmp[4] = 0x%08x\n", ihvtmp[0], ihvtmp[1], ihvtmp[2], ihvtmp[3], ihvtmp[4]);
+                        fprintf(stderr, "ctx->ihv[0] = 0x%08x ctx->ihv[1] = 0x%08x ctx->ihv[2] = 0x%08x ctx->ihv[3] = 0x%08x ctx->ihv[4] = 0x%08x\n", ctx->ihv[0], ctx->ihv[1], ctx->ihv[2], ctx->ihv[3], ctx->ihv[4]);
+                        fprintf(stderr, "ctx->ihv1[0] = 0x%08x ctx->ihv1[1] = 0x%08x ctx->ihv1[2] = 0x%08x ctx->ihv1[3] = 0x%08x ctx->ihv1[4] = 0x%08x\n", ctx->ihv1[0], ctx->ihv1[1], ctx->ihv1[2], ctx->ihv1[3], ctx->ihv1[4]);
+                        fprintf(stderr, "ctx->ihv2[0] = 0x%08x ctx->ihv2[1] = 0x%08x ctx->ihv2[2] = 0x%08x ctx->ihv2[3] = 0x%08x ctx->ihv2[4] = 0x%08x\n", ctx->ihv2[0], ctx->ihv2[1], ctx->ihv2[2], ctx->ihv2[3], ctx->ihv2[4]);
+                        */
+
 						ctx->found_collision = 1;
 
 						if (ctx->callback != NULL)

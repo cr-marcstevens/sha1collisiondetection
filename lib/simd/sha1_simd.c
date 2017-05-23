@@ -15,7 +15,12 @@
 #include <stdio.h>
 
 #if defined(SHA1DC_HAVE_MMX64) || defined(SHA1DC_HAVE_SSE128) || defined(SHA1DC_HAVE_AVX256) || defined(SHA1DC_HAVE_AVX512)
+#ifdef __GNUC__
 #include <x86intrin.h>
+#elif _MSC_VER
+#include <intrin.h>
+#endif
+
 static void sha1dc_cpuid(uint32_t level, uint32_t sublevel, uint32_t result[4])
 {
 #ifdef _MSC_VER
@@ -149,7 +154,6 @@ int SHA1DC_get_simd()
 	if (simd_index == simd_type_unknown)
 	{
 		initialize_simd();
-		fprintf(stderr, "Detected SIMD: %i\n", (int)(simd_index));
 	}
 
 	return (int)simd_index;
@@ -320,16 +324,16 @@ void sha1_process_simd(SHA1_CTX* ctx, const uint32_t block[16])
         {
             sha1_apply_message_differences_simd(ctx->m1, &(sha1_dvs_interleaved.dm[0][i]), dme);
 
-            sha1_load_state_to_simd(ctx->states[58-1], simd_states);
+            sha1_load_state_to_simd(ctx->states[58], simd_states);
 
             sha1_recompress_fast_58_simd(simd_ihv_reduced, simd_ihv_full, dme, simd_states);
 
             sha1_compare_digests_simd(ctx, simd_ihv_full, simd_ihv_reduced, &(check_results[i]));
         }
 
-        for (i = step_58_offset; i < SHA1DC_SIMD_END58; i += lane_cnt)
+        for (i = step_58_offset; i < SHA1DC_SIMD_END58; i++)
         {
-            ctx->found_collision |= (0 != check_results[i]);
+            ctx->found_collision |= (0 == check_results[i]);
         }
 
         step_65_offset = get_dv_table_offset_65();
@@ -338,16 +342,16 @@ void sha1_process_simd(SHA1_CTX* ctx, const uint32_t block[16])
         {
             sha1_apply_message_differences_simd(ctx->m1, &(sha1_dvs_interleaved.dm[0][i]), dme);
 
-            sha1_load_state_to_simd(ctx->states[65-1], simd_states);
+            sha1_load_state_to_simd(ctx->states[65], simd_states);
 
             sha1_recompress_fast_65_simd(simd_ihv_reduced, simd_ihv_full, dme, simd_states);
 
             sha1_compare_digests_simd(ctx, simd_ihv_full, simd_ihv_reduced, &(check_results[i]));
         }
 
-        for (i = step_65_offset; i < SHA1DC_SIMD_END65; i += lane_cnt)
+        for (i = step_65_offset; i < SHA1DC_SIMD_END65; i++)
         {
-            ctx->found_collision |= (0 != check_results[i]);
+            ctx->found_collision |= (0 == check_results[i]);
         }
    }
 }
