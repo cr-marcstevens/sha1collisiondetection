@@ -163,7 +163,7 @@ static size_t get_dv_table_offset_58()
 {
     size_t i;
 
-    size_t ret = SIZE_MAX;
+    size_t ret = (size_t)-1;
 
     i = SHA1DC_get_simd();
 
@@ -179,7 +179,7 @@ size_t get_dv_table_offset_65()
 {
     size_t i;
 
-    size_t ret = SIZE_MAX;
+    size_t ret = (size_t)-1;
 
     i = SHA1DC_get_simd();
 
@@ -195,7 +195,7 @@ size_t get_simd_lane_count()
 {
     size_t i;
 
-    size_t ret = SIZE_MAX;
+    size_t ret = (size_t)-1;
 
     i = SHA1DC_get_simd();
 
