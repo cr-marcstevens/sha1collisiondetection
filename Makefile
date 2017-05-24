@@ -205,9 +205,17 @@ test: tools
 	test dd39885a2a5d8f59030b451e00cb45da9f9d3828 = `bin/sha1dcsum_partialcoll test/sha1_reducedsha_coll.bin | cut -d' ' -f1` 
 	test d3a1d09969c3b57113fd17b23e01dd3de74a99bb = `bin/sha1dcsum_partialcoll test/shattered-1.pdf | cut -d' ' -f1`
 	test 92246b0b718f4c704d37bb025717cbc66babf102 = `bin/sha1dcsum_partialcoll test/shattered-2.pdf | cut -d' ' -f1`
+ifeq (,$(NOSIMD))
+	test 38762cf7f55934b34d179ae6a4c80cadccbb7f0a = `bin/sha1dcsum_simd test/shattered-1.pdf | cut -d' ' -f1`
+	test 38762cf7f55934b34d179ae6a4c80cadccbb7f0a = `bin/sha1dcsum_simd test/shattered-2.pdf | cut -d' ' -f1`
+	test a56374e1cf4c3746499bc7c0acb39498ad2ee185 = `bin/sha1dcsum test/sha1_reducedsha_coll.bin | cut -d' ' -f1`
+endif
 	bin/sha1dcsum test/*
 	bin/sha1dcsum_partialcoll test/*
-	
+ifeq (,$(NOSIMD))
+	bin/sha1dcsum_simd test/*
+endif
+
 .PHONY: check
 check: test
 
