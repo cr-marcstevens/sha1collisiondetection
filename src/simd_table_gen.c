@@ -323,7 +323,7 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 			);
 	}
 	fprintf(fd,
-		"\ntypedef struct {\n"
+		"\ntypedef __attribute__((aligned(32))) struct {\n"
 		"    uint32_t dm[80][SHA1DC_SIMD_TABLESIZE];\n"
 		"    uint32_t mask58[SHA1DC_SIMD_TABLESIZE+SHA1DC_SIMD_FINALPADDING];\n"
 		"    uint32_t mask65[SHA1DC_SIMD_TABLESIZE+SHA1DC_SIMD_FINALPADDING];\n"
