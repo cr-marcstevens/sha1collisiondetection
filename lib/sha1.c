@@ -10,6 +10,9 @@
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __unix__
+#include <sys/types.h> /* make sure macros like _BIG_ENDIAN visible */
+#endif
 #endif
 
 #ifdef SHA1DC_CUSTOM_INCLUDE_SHA1_C
