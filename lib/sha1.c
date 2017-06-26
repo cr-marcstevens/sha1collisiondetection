@@ -36,6 +36,28 @@
 #undef SHA1DC_BIGENDIAN
 #endif
 
+#ifdef sun
+
+#ifdef __sparc
+/*
+ * Why not do this generically? Because Linux at least will define
+ * __BIG_ENDIAN but we're only Big Endian if __BYTE_ORDER is
+ * equivalent to __BIG_ENDIAN, but on Solaris SPARC _BIG_ENDIAN is
+ * defined without any value. Thus just checking if _BIG_ENDIAN is
+ * defined on Solaris SPARC works, but we can't just check if it's
+ * defined because on Linux x86 it'll be defined, just as
+ * __BIG_ENDIAN.
+ *
+ * There's probably some easy way out of this, but let's just take the
+ * easy way out here and treat Solaris specially. This is the Oracle
+ * documented way to check for Solaris SPARC. See
+ * http://www.oracle.com/technetwork/server-storage/solaris/portingtosolaris-138514.html
+ */
+#define SHA1DC_BIGENDIAN
+#endif
+
+#else
+
 #if (defined(_BYTE_ORDER) || defined(__BYTE_ORDER) || defined(__BYTE_ORDER__))
 
 #if ((defined(_BYTE_ORDER) && (_BYTE_ORDER == _BIG_ENDIAN)) || \
@@ -51,6 +73,8 @@
      defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || \
      defined(__sparc))
 #define SHA1DC_BIGENDIAN
+#endif
+
 #endif
 
 #endif
