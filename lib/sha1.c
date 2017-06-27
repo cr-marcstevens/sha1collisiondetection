@@ -23,6 +23,13 @@
 #include "sha1.h"
 #include "ubc_check.h"
 
+#if (defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || \
+     defined(i386) || defined(__i386) || defined(__i386__) || defined(__i486__)  || \
+     defined(__i586__) || defined(__i686__) || defined(_M_IX86) || defined(__X86__) || \
+     defined(_X86_) || defined(__THW_INTEL__) || defined(__I86__) || defined(__INTEL__) || \
+     defined(__386) || defined(_M_X64) || defined(_M_AMD64))
+#define SHA1DC_ON_INTEL_LIKE_PROCESSOR
+#endif
 
 /*
    Because Little-Endian architectures are most common,
@@ -32,52 +39,70 @@
    If you are compiling on a big endian platform and your compiler does not define one of these,
    you will have to add whatever macros your tool chain defines to indicate Big-Endianness.
  */
-#ifdef SHA1DC_BIGENDIAN
-#undef SHA1DC_BIGENDIAN
+
+#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__)
+/*
+ * Should detect Big Endian under GCC since at least 4.6.0 (gcc svn
+ * rev #165881). See
+ * https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
+ *
+ * This also works under clang since 3.2, it copied the GCC-ism. See
+ * clang.git's 3b198a97d2 ("Preprocessor: add __BYTE_ORDER__
+ * predefined macro", 2012-07-27)
+ */
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define SHA1DC_BIGENDIAN
 #endif
 
-#ifdef sun
+#else /* Not under GCC-alike */
 
-#ifdef __sparc
+#if defined(__BYTE_ORDER) && defined(__BIG_ENDIAN)
 /*
- * Why not do this generically? Because Linux at least will define
- * __BIG_ENDIAN but we're only Big Endian if __BYTE_ORDER is
- * equivalent to __BIG_ENDIAN, but on Solaris SPARC _BIG_ENDIAN is
- * defined without any value. Thus just checking if _BIG_ENDIAN is
- * defined on Solaris SPARC works, but we can't just check if it's
- * defined because on Linux x86 it'll be defined, just as
- * __BIG_ENDIAN.
- *
- * There's probably some easy way out of this, but let's just take the
- * easy way out here and treat Solaris specially. This is the Oracle
- * documented way to check for Solaris SPARC. See
+ * Should detect Big Endian under glibc.git since 14245eb70e ("entered
+ * into RCS", 1992-11-25). Defined in <endian.h> which will have been
+ * brought in by standard headers. See glibc.git and
+ * https://sourceforge.net/p/predef/wiki/Endianness/
+ */
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define SHA1DC_BIGENDIAN
+#endif
+
+#else /* Not under GCC-alike or glibc */
+
+#if (defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
+     defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || \
+     defined(__sparc))
+/*
+ * Should define Big Endian for a whitelist of known processors. See
+ * https://sourceforge.net/p/predef/wiki/Endianness/ and
  * http://www.oracle.com/technetwork/server-storage/solaris/portingtosolaris-138514.html
  */
 #define SHA1DC_BIGENDIAN
-#endif
 
-#else
+#else /* Not under GCC-alike or glibc or <processor whitelist> */
 
-#if (defined(_BYTE_ORDER) || defined(__BYTE_ORDER) || defined(__BYTE_ORDER__))
+#if defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR)
+/*
+ * As a last resort before we fall back on _BIG_ENDIAN or whatever
+ * else we're not 100% sure about below, we blacklist specific
+ * processors here. We could add more, see
+ * e.g. https://wiki.debian.org/ArchitectureSpecificsMemo
+ */
+#else /* Not under GCC-alike or glibc or <processor whitelist>  or <processor blacklist> */
 
-#if ((defined(_BYTE_ORDER) && (_BYTE_ORDER == _BIG_ENDIAN)) || \
-     (defined(__BYTE_ORDER) && (__BYTE_ORDER == __BIG_ENDIAN)) || \
-     (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __BIG_ENDIAN__)) )
+#ifdef _BIG_ENDIAN
+/*
+ * Solaris / illumos defines either _LITTLE_ENDIAN or _BIG_ENDIAN in
+ * <sys/isa_defs.h>.
+ */
 #define SHA1DC_BIGENDIAN
-#endif
-
 #else
-
-#if (defined(_BIG_ENDIAN) || defined(__BIG_ENDIAN) || defined(__BIG_ENDIAN__) || \
-     defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
-     defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || \
-     defined(__sparc))
-#define SHA1DC_BIGENDIAN
-#endif
-
-#endif
-
-#endif
+/*#error "Uncomment this to see if you fall through all the detection"*/
+#endif /* Big Endian because of _BIG_ENDIAN (Solaris)*/
+#endif /* !SHA1DC_ON_INTEL_LIKE_PROCESSOR */
+#endif /* Big Endian under whitelist of processors */
+#endif /* Big Endian under glibc */
+#endif /* Big Endian under GCC-alike */
 
 #if (defined(SHA1DC_FORCE_LITTLEENDIAN) && defined(SHA1DC_BIGENDIAN))
 #undef SHA1DC_BIGENDIAN
@@ -87,15 +112,8 @@
 #endif
 /*ENDIANNESS SELECTION*/
 
-#if (defined SHA1DC_FORCE_UNALIGNED_ACCESS || \
-     defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || \
-     defined(i386) || defined(__i386) || defined(__i386__) || defined(__i486__)  || \
-     defined(__i586__) || defined(__i686__) || defined(_M_IX86) || defined(__X86__) || \
-     defined(_X86_) || defined(__THW_INTEL__) || defined(__I86__) || defined(__INTEL__) || \
-     defined(__386) || defined(_M_X64) || defined(_M_AMD64))
-
+#if defined(SHA1DC_FORCE_UNALIGNED_ACCESS) || defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR)
 #define SHA1DC_ALLOW_UNALIGNED_ACCESS
-
 #endif /*UNALIGNMENT DETECTION*/
 
 
