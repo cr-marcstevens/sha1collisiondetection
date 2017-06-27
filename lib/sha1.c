@@ -83,22 +83,15 @@
 
 #if defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR)
 /*
- * As a last resort before we fall back on _BIG_ENDIAN or whatever
- * else we're not 100% sure about below, we blacklist specific
- * processors here. We could add more, see
- * e.g. https://wiki.debian.org/ArchitectureSpecificsMemo
+ * As a last resort before we do anything else we're not 100% sure
+ * about below, we blacklist specific processors here. We could add
+ * more, see e.g. https://wiki.debian.org/ArchitectureSpecificsMemo
  */
 #else /* Not under GCC-alike or glibc or <processor whitelist>  or <processor blacklist> */
 
-#ifdef _BIG_ENDIAN
-/*
- * Solaris / illumos defines either _LITTLE_ENDIAN or _BIG_ENDIAN in
- * <sys/isa_defs.h>.
- */
-#define SHA1DC_BIGENDIAN
-#else
+/* We do nothing more here for now */
 /*#error "Uncomment this to see if you fall through all the detection"*/
-#endif /* Big Endian because of _BIG_ENDIAN (Solaris)*/
+
 #endif /* !SHA1DC_ON_INTEL_LIKE_PROCESSOR */
 #endif /* Big Endian under whitelist of processors */
 #endif /* Big Endian under glibc */
