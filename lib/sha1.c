@@ -72,8 +72,16 @@
 
 #else /* Not under GCC-alike or glibc */
 
-/* *BSD and newlib (embeded linux, cygwin, etc) */
-#if defined(_BYTE_ORDER) && defined(_BIG_ENDIAN) && _BYTE_ORDER == _BIG_ENDIAN
+/*
+ * *BSD and newlib (embeded linux, cygwin, etc).
+ * the defined(_BIG_ENDIAN) && defined(_LITTLE_ENDIAN) part prevents
+ * this condition from matching with Solaris/sparc.
+ * (Solaris defines only one endian macro)
+ * 
+ */
+#if defined(_BYTE_ORDER) && \
+    defined(_BIG_ENDIAN) && defined(_LITTLE_ENDIAN) &&	\
+    _BYTE_ORDER == _BIG_ENDIAN
 
 #define SHA1DC_BIGENDIAN
 
