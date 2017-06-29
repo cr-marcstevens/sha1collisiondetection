@@ -54,9 +54,8 @@
 #define SHA1DC_BIGENDIAN
 #endif
 
-#else /* Not under GCC-alike */
-
-#if defined(__BYTE_ORDER) && defined(__BIG_ENDIAN)
+/* Not under GCC-alike */
+#elif defined(__BYTE_ORDER) && defined(__BIG_ENDIAN)
 /*
  * Should detect Big Endian under glibc.git since 14245eb70e ("entered
  * into RCS", 1992-11-25). Defined in <endian.h> which will have been
@@ -67,11 +66,10 @@
 #define SHA1DC_BIGENDIAN
 #endif
 
-#else /* Not under GCC-alike or glibc */
-
-#if (defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
-     defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || \
-     defined(__sparc))
+/* Not under GCC-alike or glibc */
+#elif (defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
+       defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || \
+       defined(__sparc))
 /*
  * Should define Big Endian for a whitelist of known processors. See
  * https://sourceforge.net/p/predef/wiki/Endianness/ and
@@ -79,9 +77,8 @@
  */
 #define SHA1DC_BIGENDIAN
 
-#else /* Not under GCC-alike or glibc or <processor whitelist> */
-
-#if defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR)
+/* Not under GCC-alike or glibc or <processor whitelist> */
+#elif defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR)
 /*
  * As a last resort before we do anything else we're not 100% sure
  * about below, we blacklist specific processors here. We could add
@@ -92,10 +89,7 @@
 /* We do nothing more here for now */
 /*#error "Uncomment this to see if you fall through all the detection"*/
 
-#endif /* !SHA1DC_ON_INTEL_LIKE_PROCESSOR */
-#endif /* Big Endian under whitelist of processors */
-#endif /* Big Endian under glibc */
-#endif /* Big Endian under GCC-alike */
+#endif /* Big Endian detection */
 
 #if (defined(SHA1DC_FORCE_LITTLEENDIAN) && defined(SHA1DC_BIGENDIAN))
 #undef SHA1DC_BIGENDIAN
