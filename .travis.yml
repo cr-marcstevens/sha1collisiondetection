@@ -23,7 +23,7 @@ before_install:
   
 script:
   - autoreconf --install
-  - ./configure --with-prefix=$(pwd)/local
+  - ./configure --prefix=$(pwd)/local
   - make
   - make install
   - find local

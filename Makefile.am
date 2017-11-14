@@ -28,7 +28,7 @@ nodist_lib_libsha1detectcoll_la_SOURCES = lib/simd/dvs_simd.h lib/simd/dvs_simd.
 BUILT_SOURCES = lib/simd/dvs_simd.h lib/simd/dvs_simd.c
 CLEANFILES = lib/simd/dvs_simd.h lib/simd/dvs_simd.c
 
-lib/simd/dvs_simd.h lib/simd/dvs_simd.c: Makefile lib/simd/DV_data.txt
+lib/simd/dvs_simd.h lib/simd/dvs_simd.c: Makefile bin/simd_table_gen$(EXEEXT) lib/simd/DV_data.txt
 	if [ ! -f $@ ] || [ $@ -ot Makefile ]; then bin/simd_table_gen$(EXEEXT) lib/simd/DV_data.txt ; fi
 
 # standard program sha1dcsum and test program sha1dcsum_partialcoll
