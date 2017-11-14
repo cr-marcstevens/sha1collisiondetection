@@ -17,7 +17,7 @@
 
 #define sha1_bswap32(x) \
 	{x = ((x << 8) & 0xFF00FF00) | ((x >> 8) & 0xFF00FF); x = (x << 16) | (x >> 16);}
-#define sha1_loadbyte(m, t, s) ((uint32_t)((const unsigned char*)(m+t)[s]))
+#define sha1_loadbyte(m, t, s) (((uint32_t)(((const unsigned char*)(m+t))[s]))&0xFF)
 
 /* ensure that exactly one of SHA1DC_HAVE_{LITTLEENDIAN,BIGENDIAN,UNKNOWNENDIAN} is defined */
 #ifdef SHA1DC_HAVE_LITTLEENDIAN
@@ -33,7 +33,8 @@
 #define sha1_load(m, t, dest)  { dest = (sha1_loadbyte(m,t,0)<<24)^(sha1_loadbyte(m,t,1)<<16)^(sha1_loadbyte(m,t,2)<<8)^sha1_loadbyte(m,t,3); }
 #endif
 #ifndef sha1_load
-#error "Endianness not properly configured"
+#pragma message "Endianness not properly configured"
+#define sha1_load(m, t, dest)  { dest = (sha1_loadbyte(m,t,0)<<24)^(sha1_loadbyte(m,t,1)<<16)^(sha1_loadbyte(m,t,2)<<8)^sha1_loadbyte(m,t,3); }
 #endif
 
 

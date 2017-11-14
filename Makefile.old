@@ -5,15 +5,17 @@
 ## https://opensource.org/licenses/MIT
 ##
 
-# if lib/simd/config.h does not exist, create empty one and force automatic configuration
-ifeq (,$(wildcard lib/simd/config.h))
-$(shell touch lib/simd/config.h)
+$(shell cp Makefile.old Makefile)
+
+# if lib/.config.h does not exist, create empty one and force automatic configuration
+ifeq (,$(wildcard lib/.config.h))
+$(shell touch lib/.config.h)
 $(shell rm -f Makefile.config)
 endif
 
-# if Makefile.config does not exist, create empty lib/simd/config.h and warn
+# if Makefile.config does not exist, create empty lib/.config.h and warn
 ifeq (,$(wildcard Makefile.config))
-$(shell echo > lib/simd/config.h)
+$(shell echo > lib/.config.h)
 $(shell echo > lib/simd/dvs_simd.h)
 $(shell echo > lib/simd/dvs_simd.c)
 ifeq (,$(filter config clean,$(MAKECMDGOALS)))
@@ -138,7 +140,7 @@ all: library tools
 
 .PHONY: config
 config:
-	@echo > lib/simd/config.h
+	@echo > lib/.config.h
 	@echo > Makefile.config
 	@echo > lib/simd/dvs_simd.h
 	@echo > lib/simd/dvs_simd.c
@@ -151,31 +153,31 @@ ifeq (,$(NOSIMD))
 endif
 	@if [ `grep "=1" Makefile.config | wc -l` -ne 0 ]; then \
 		(echo "HAVE_SIMD=1" >> Makefile.config); \
-		(echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h); \
+		(echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/.config.h); \
 		cat Makefile.config; \
 		echo "\nGenerating SIMD tables using max $(SIMD_MAX_DVS) DVs: lib/simd/dvs_simd.c lib/simd/dvs_simd.h..."; \
 		($(MAKE) gen_simd_tables  | grep "finalpadding" -A20 | cat) || (echo "FAILED !"); \
 	else \
 		(echo "HAVE_SIMD=0" >> Makefile.config); \
-		(echo "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/simd/config.h); \
+		(echo "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/.config.h); \
 		cat Makefile.config; \
 	fi
 
 .PHONY: enablesimd disablesimd
 enablesimd:
 	@echo "HAVE_$(SIMD)=1" >> Makefile.config
-	@echo "#ifndef SHA1DC_HAVE_$(SIMD)\n#define SHA1DC_HAVE_$(SIMD)\n#endif\n" >> lib/simd/config.h
+	@echo "#ifndef SHA1DC_HAVE_$(SIMD)\n#define SHA1DC_HAVE_$(SIMD)\n#endif\n" >> lib/.config.h
 	@echo "SIMD supported: $(SIMD)"
 disablesimd:
 	@echo "HAVE_$(SIMD)=0" >> Makefile.config
-	@echo "#ifdef SHA1DC_HAVE_$(SIMD)\n#undef SHA1DC_HAVE_$(SIMD)\n#endif\n" >> lib/simd/config.h
+	@echo "#ifdef SHA1DC_HAVE_$(SIMD)\n#undef SHA1DC_HAVE_$(SIMD)\n#endif\n" >> lib/.config.h
 	@echo "SIMD NOT supported: $(SIMD)"
 
 .PHONY: install
 install: all
 	$(LT_INSTALL) -d $(LIBDIR) $(BINDIR) $(INCLUDEDIR)
 	$(LT_INSTALL) bin/libsha1detectcoll.$(LIB_EXT) $(LIBDIR)/libsha1detectcoll.$(LIB_EXT)
-	$(LT_INSTALL) lib/sha1.h $(INCLUDEDIR)/sha1.h
+	$(LT_INSTALL) lib/sha1.h $(INCLUDEDIR)/sha1dc/sha1.h
 	$(LT_INSTALL) bin/sha1dcsum $(BINDIR)/sha1dcsum
 	$(LT_INSTALL) bin/sha1dcsum_partialcoll $(BINDIR)/sha1dcsum_partialcoll
 
@@ -183,12 +185,13 @@ install: all
 uninstall:
 	-$(RM) $(BINDIR)/sha1dcsum
 	-$(RM) $(BINDIR)/sha1dcsum_partialcoll
-	-$(RM) $(INCLUDEDIR)/sha1.h
 	-$(RM) $(LIBDIR)/libsha1detectcoll.$(LIB_EXT)
+	-$(RM) $(INCLUDEDIR)/sha1dc/sha1.h
+	-rmdir $(INCLUDEDIR)/sha1dc
 
 .PHONY: clean
 clean:
-	-rm -rf bin Makefile.config lib/simd/config.h lib/simd/dvs_simd.* dep_lib obj_lib dep_src obj_src
+	-rm -rf bin Makefile.config lib/.config.h lib/simd/dvs_simd.* dep_lib obj_lib dep_src obj_src
 	-find . -type f -name '*.a' -print -delete
 	-find . -type f -name '*.d' -print -delete
 	-find . -type f -name '*.o' -print -delete
@@ -251,14 +254,13 @@ bin/sha1dcsum_partialcoll: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 bin/sha1dcsum_simd: $(FS_OBJ_SRC) bin/libsha1detectcoll.$(LIB_EXT)
 	$(LT_LD) $(LDFLAGS) $(FS_OBJ_SRC) -Lbin -lsha1detectcoll -o bin/sha1dcsum_simd
 
-
 bin/simd_table_gen: $(SRC_OBJ_DIR)/simd_table_gen.lo
 	$(MKDIR) $(shell dirname $@)
 	$(LT_LD) $(LDFLAGS) $< -o $@
 
 .PHONY: gen_simd_tables
 gen_simd_tables: bin/simd_table_gen
-	$< src/DV_data.txt $(SIMD_MAX_DVS)
+	bin/simd_table_gen lib/simd/DV_data.txt $(SIMD_MAX_DVS)
 
 
 $(SRC_DEP_DIR)/%.d: $(SRC_DIR)/%.c
@@ -278,11 +280,15 @@ $(LIB_OBJ_DIR)/%.lo $(LIB_OBJ_DIR)/%.o: $(LIB_DIR)/%.c $(LIB_DEP_DIR)/%.d $(H_DE
 	$(MKDIR) $(shell dirname $@)
 	$(LT_CC) $(CFLAGS) -o $@ -c $<
 
+$(LIB_OBJ_DIR)/simd/%.lo $(LIB_OBJ_DIR)/simd/%.o: $(LIB_DIR)/simd/%.c $(LIB_DEP_DIR)/simd/%.d $(H_DEP)
+	$(MKDIR) $(shell dirname $@)
+	$(LT_CC) $(CFLAGS) -o $@ -c $<
+
 
 # try to compile lib/simd/simd_test.c with SIMDTESTFLAGS added to CFLAGS
 .PHONY: simd_test
 simd_test: CFLAGS+=$(SIMDTESTFLAGS)
-simd_test: $(LIB_OBJ_DIR)/simd/simd_test.lo
-	rm $<
+simd_test:
+	$(LT_CC) $(CFLAGS) -o $(LIB_OBJ_DIR)/simd_test.lo -c $(LIB_SIMD_DIR)/simd_test.cinc
 
 -include $(FS_DEP)
