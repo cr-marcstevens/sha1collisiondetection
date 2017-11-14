@@ -5,7 +5,7 @@
 * https://opensource.org/licenses/MIT
 ***/
 
-#include "../lib/simd/config.h"
+#include "config.h"
 
 /* TODO: set SIMD_MAX_WORD_ALIGNMENT and MAX_SIMD_EXPONENT in ../lib/simd/config.h depending on platform and features */
 
