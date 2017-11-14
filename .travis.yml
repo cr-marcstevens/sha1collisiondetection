@@ -25,6 +25,7 @@ script:
   - autoreconf --install
   - ./configure --prefix=$(pwd)/local
   - make
+  - make check
   - make install
   - find local
 
