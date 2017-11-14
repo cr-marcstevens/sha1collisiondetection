@@ -57,7 +57,7 @@ endif
 
 MKDIR=mkdir -p
 
-CFLAGS= -Wall -Werror -Wextra -pedantic -std=c90 -Ilib -g -ggdb
+CFLAGS= -Wall -Werror -Wextra -pedantic -std=c90 -Ilib -g -ggdb -DHAVE_CONFIG_H
 LDFLAGS=
 MMX64FLAGS=-mmmx
 SSE128FLAGS=-msse -msse2
@@ -153,24 +153,24 @@ ifeq (,$(NOSIMD))
 endif
 	@if [ `grep "=1" Makefile.config | wc -l` -ne 0 ]; then \
 		(echo "HAVE_SIMD=1" >> Makefile.config); \
-		(echo "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/.config.h); \
+		(echo -e "#ifndef SHA1DC_HAVE_SIMD\n#define SHA1DC_HAVE_SIMD\n#endif\n" >> lib/.config.h); \
 		cat Makefile.config; \
-		echo "\nGenerating SIMD tables using max $(SIMD_MAX_DVS) DVs: lib/simd/dvs_simd.c lib/simd/dvs_simd.h..."; \
+		echo -e "\nGenerating SIMD tables using max $(SIMD_MAX_DVS) DVs: lib/simd/dvs_simd.c lib/simd/dvs_simd.h..."; \
 		($(MAKE) gen_simd_tables  | grep "finalpadding" -A20 | cat) || (echo "FAILED !"); \
 	else \
 		(echo "HAVE_SIMD=0" >> Makefile.config); \
-		(echo "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/.config.h); \
+		(echo -e "#ifdef SHA1DC_HAVE_SIMD\n#undef SHA1DC_HAVE_SIMD\n#endif\n" >> lib/.config.h); \
 		cat Makefile.config; \
 	fi
 
 .PHONY: enablesimd disablesimd
 enablesimd:
 	@echo "HAVE_$(SIMD)=1" >> Makefile.config
-	@echo "#ifndef SHA1DC_HAVE_$(SIMD)\n#define SHA1DC_HAVE_$(SIMD)\n#endif\n" >> lib/.config.h
+	@echo -e "#ifndef SHA1DC_HAVE_$(SIMD)\n#define SHA1DC_HAVE_$(SIMD)\n#endif\n" >> lib/.config.h
 	@echo "SIMD supported: $(SIMD)"
 disablesimd:
 	@echo "HAVE_$(SIMD)=0" >> Makefile.config
-	@echo "#ifdef SHA1DC_HAVE_$(SIMD)\n#undef SHA1DC_HAVE_$(SIMD)\n#endif\n" >> lib/.config.h
+	@echo -e "#ifdef SHA1DC_HAVE_$(SIMD)\n#undef SHA1DC_HAVE_$(SIMD)\n#endif\n" >> lib/.config.h
 	@echo "SIMD NOT supported: $(SIMD)"
 
 .PHONY: install

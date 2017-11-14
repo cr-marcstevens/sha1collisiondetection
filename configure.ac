@@ -1,7 +1,7 @@
 AC_PREREQ([2.68])
 AC_INIT([sha1collisiondetection], [1.0.4], [marc@marc-stevens.nl],[sha1collisiondetection],[https://github.com/cr-marcstevens/sha1collisiondetection])
 AC_CONFIG_SRCDIR([README.md])
-AC_CONFIG_HEADERS([.config.h])
+AC_CONFIG_HEADERS([_config.h])
 AX_PREFIX_CONFIG_H([lib/.config.h],[SHA1DC])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
