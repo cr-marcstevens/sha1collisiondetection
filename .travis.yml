@@ -22,10 +22,10 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libtool; fi
   
 script:
-  - make config
+  - ./configure --with-prefix=$(pwd)/local
   - make
-  - make test
-  - cat test_*.log
+  - make install
+  - find local
 
 notifications:
   on_success: change
