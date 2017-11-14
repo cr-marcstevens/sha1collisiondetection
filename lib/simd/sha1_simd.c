@@ -5,6 +5,8 @@
 * https://opensource.org/licenses/MIT
 ***/
 
+#include "../config.h"
+
 #include "sha1.h"
 #include "sha1_simd.h"
 #include "dvs_simd.h"
@@ -102,10 +104,10 @@ static dv_table_info_t dv_table_info[5] =
 
 static void initialize_simd()
 {
-	uint32_t abcd[4];
-	uint32_t maxlevel;
 	/* TODO Put configuration code here. */
 #if defined(SHA1DC_HAVE_MMX64) || defined(SHA1DC_HAVE_SSE128) || defined(SHA1DC_HAVE_AVX256) || defined(SHA1DC_HAVE_AVX512)
+	uint32_t abcd[4];
+	uint32_t maxlevel;
 	sha1dc_cpuid(0,0,abcd);
 	maxlevel = abcd[0];
 #ifdef SHA1DC_HAVE_AVX512

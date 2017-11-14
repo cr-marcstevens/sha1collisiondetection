@@ -7,6 +7,8 @@
 
 /* this file generates mmx64 code using mmx64 MACROS (simd_mmx64.h) and generic SIMD code (sha1_simd.cinc) */
 
+#include "../lib/config.h"
+
 #include "simd_config.h"
 #ifdef SHA1DC_HAVE_MMX64
 #include "sha1.h"

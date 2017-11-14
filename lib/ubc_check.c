@@ -24,6 +24,8 @@
 // ubc_check has been verified against ubc_check_verify using the 'ubc_check_test' program in the tools section
 */
 
+#include "config.h"
+
 #include <stdint.h>
 #include "ubc_check.h"
 

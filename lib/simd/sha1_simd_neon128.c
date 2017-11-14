@@ -7,6 +7,8 @@
 
 /* this file generates neon 32x4 code using neon MACROS (arm_neon.h) and generic SIMD code (sha1_simd.cinc)*/
 
+#include "../config.h"
+
 #include "simd_config.h"
 #ifdef SHA1DC_HAVE_NEON128
 #include "sha1.h"

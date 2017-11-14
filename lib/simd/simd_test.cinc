@@ -1,3 +1,5 @@
+#include "../config.h"
+
 #ifdef TEST_MMX64
 #include "simd_mmx64.h"
 #endif
@@ -19,6 +21,10 @@
 #endif
 
 #include <stdint.h>
+
+typedef __attribute__((aligned(32))) struct {
+	uint32_t w[SIMD_VECSIZE];
+} test_aligned_t;
 
 int main(int argc, char** argv)
 {

@@ -7,6 +7,8 @@
 
 /* this file generates avx256 code using avx256 MACROS (simd_avx256.h) and generic SIMD code (sha1_simd.cinc) */
 
+#include "../lib/config.h"
+
 #include "simd_config.h"
 #ifdef SHA1DC_HAVE_AVX256
 #include "sha1.h"

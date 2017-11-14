@@ -7,6 +7,8 @@
 
 /* this file generates avx512 code using avx512 MACROS (simd_avx512.h) and generic SIMD code (sha1_simd.cinc) */
 
+#include "../config.h"
+
 #include "simd_config.h"
 #ifdef SHA1DC_HAVE_AVX512
 #include "sha1.h"

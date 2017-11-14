@@ -282,6 +282,7 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 	}
 
 	/* Output code */
+	printf("Generating file: lib/simd/dvs_simd.h...\n");
 	fd = fopen("lib/simd/dvs_simd.h", "w");
 	if (fd == NULL)
 		parse_error("Cannot open output file to write");
@@ -338,6 +339,7 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 		);
 	fclose(fd);
 
+	printf("Generating file: lib/simd/dvs_simd.c...\n");
 	fd = fopen("lib/simd/dvs_simd.c", "w");
 	if (fd == NULL)
 		parse_error("Cannot open output file to write");
@@ -393,6 +395,8 @@ int generate_code(DV_info_t* DVS, int nrdvs)
 	fprintf(fd, "};\n");
 
 	fclose(fd);
+
+	printf("Finished generating files!\n");
 
 	return 0;
 }
