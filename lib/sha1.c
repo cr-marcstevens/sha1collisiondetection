@@ -1618,7 +1618,7 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	uint32_t ihvtmp[5];
 
 #ifdef SHA1DC_HAVE_SIMD
-	if (ctx->ubc_check == 0 && ctx->simd > 0)
+	if (ctx->ubc_check == 0 && ctx->safe_hash == 0 && ctx->simd > 0)
 	{
 		sha1_process_simd(ctx, block);
 		return;

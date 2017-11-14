@@ -63,6 +63,7 @@ int main(int argc, char** argv)
 		if (NULL != strstr(argv[0], "simd"))
 		{
 			SHA1DCSetUseUBC(&ctx2, 0);
+			SHA1DCSetSafeHash(&ctx2, 0);
 		}
 
 		if(!strcmp(argv[i],"-")) {

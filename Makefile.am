@@ -34,13 +34,16 @@ lib/simd/dvs_simd.h lib/simd/dvs_simd.c: Makefile bin/simd_table_gen$(EXEEXT) li
 # standard program sha1dcsum and test program sha1dcsum_partialcoll
 bin_PROGRAMS=bin/sha1dcsum
 
-EXTRA_PROGRAMS=bin/sha1dcsum_partialcoll bin/simd_table_gen
+EXTRA_PROGRAMS=bin/sha1dcsum_partialcoll bin/sha1dcsum_simd bin/simd_table_gen
 
 bin_sha1dcsum_SOURCES=src/main.c
 bin_sha1dcsum_LDADD=lib/libsha1detectcoll.la
 
 bin_sha1dcsum_partialcoll_SOURCES=src/main.c
 bin_sha1dcsum_partialcoll_LDADD=lib/libsha1detectcoll.la
+
+bin_sha1dcsum_simd_SOURCES=src/main.c
+bin_sha1dcsum_simd_LDADD=lib/libsha1detectcoll.la
 
 bin_simd_table_gen_SOURCES=src/simd_table_gen.c
 
@@ -61,3 +64,8 @@ endif
 if HAVE_NEON128
 %_neon128.lo %_neon128.o: CFLAGS += $(NEON128FLAGS)
 endif
+
+
+# TESTS
+TESTS = test/test.sh
+test/test.sh: bin/sha1dcsum bin/sha1dcsum_partialcoll bin/sha1dcsum_simd
