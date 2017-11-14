@@ -19,9 +19,10 @@ matrix:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libtool; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install autoconf automake libtool; fi
   
 script:
+  - autoreconf --install
   - ./configure --with-prefix=$(pwd)/local
   - make
   - make install
