@@ -33,8 +33,13 @@ INSTALL ?= install
 endif
 
 
+ifeq ($CC,gcc)
 CFLAGS=-O2 -Wall -Werror -Wextra -pedantic -std=c90 -Ilib
 LDFLAGS=
+else
+CFLAGS=-Ilib
+LDFLAGS=
+endif
 
 LT_CC:=$(LIBTOOL) --tag=CC --mode=compile $(CC)
 LT_CC_DEP:=$(CC)
