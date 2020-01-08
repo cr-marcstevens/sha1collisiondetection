@@ -44,7 +44,7 @@ make
 ## Command-line usage
 
 There are two programs `bin/sha1dcsum` and `bin/sha1dcsum_partialcoll`.
-The first program `bin/sha1dcsum` will detect and warn for files that were generated with a cryptanalytic SHA-1 collision attack like the one documented at https://shattered.io/.
+The first program `bin/sha1dcsum` will detect and warn for files that were generated with a cryptanalytic SHA-1 collision attack like the one documented at https://shattered.io/ or https://sha-mbles.github.io/.
 The second program `bin/sha1dcsum_partialcoll` will detect and warn for files that were generated with a cryptanalytic collision attack against reduced-round SHA-1 (of which there are a few examples so far).
 
 Examples:
