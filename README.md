@@ -36,9 +36,18 @@ https://marc-stevens.nl/research/papers/C13-S.pdf
 
 ## Compiling
 
-Run:
+### Using autotools
+
 ```
+autoreconf --install
+./configure
 make
+```
+
+### Using the old build system
+
+```
+make -f Makefile.old
 ```
 
 ## Command-line usage

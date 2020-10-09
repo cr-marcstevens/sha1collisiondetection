@@ -23,8 +23,11 @@
 // a directly verifiable version named ubc_check_verify can be found in ubc_check_verify.c
 // ubc_check has been verified against ubc_check_verify using the 'ubc_check_test' program in the tools section
 */
-
+ master
 #ifndef SHA1DC_NO_STANDARD_INCLUDES
+=======
+#include "config.h"
+ simd
 #include <stdint.h>
 #endif
 #ifdef SHA1DC_CUSTOM_INCLUDE_UBC_CHECK_C

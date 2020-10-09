@@ -27,7 +27,7 @@
 *.exe
 *.out
 *.app
-
+ master
 # Generated directories
 /dep_lib/
 /obj_lib/
@@ -35,6 +35,20 @@
 /obj_src/
 /bin/
 
-# The git.git project generates lib/.depend/ with
-# COMPUTE_HEADER_DEPENDENCIES=[auto|yes].
+The git.git project generates lib/.depend/ with
+COMPUTE_HEADER_DEPENDENCIES=[auto|yes].
 .depend/
+=======
+sha1 collision detection specific config files.
+Makefile.config
+lib/simd/config.h
+lib/simd/dvs_simd.c
+lib/simd/dvs_simd.h
+
+sha1 collision detection specific build directories
+bin/
+dep_lib/
+dep_src/
+
+sha1 collision detection specific logs
+/log
