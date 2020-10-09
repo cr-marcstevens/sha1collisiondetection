@@ -12,8 +12,12 @@
 extern "C" {
 #endif
 
+#ifndef SHA1DC_NO_STANDARD_INCLUDES
 #include <stdint.h>
-#include <stddef.h>
+ master
+#endif
+=======
+#include <stddef.h> simd
 
 /* sha-1 compression function that takes an already expanded message, and additionally store intermediate states */
 /* only stores states ii (the state between step ii-1 and step ii) when DOSTORESTATEii is defined in ubc_check.h */
@@ -65,7 +69,7 @@ void SHA1DCInit(SHA1_CTX*);
         The best collision attacks against SHA-1 have complexity about 2^60,
         thus for 240-steps an immediate lower-bound for the best cryptanalytic attacks would be 2^180.
         An attacker would be better off using a generic birthday search of complexity 2^80.
-  
+
    Enabling safe SHA-1 hashing will result in the correct SHA-1 hash for messages where no collision attack was detected,
    but it will result in a different SHA-1 hash for messages where a collision attack was detected.
    This will automatically invalidate SHA-1 based digital signature forgeries.
@@ -98,10 +102,14 @@ void SHA1DCUpdate(SHA1_CTX*, const char*, size_t);
 
 /* obtain SHA-1 hash from SHA-1 context */
 /* returns: 0 = no collision detected, otherwise = collision found => warn user for active attack */
-int  SHA1DCFinal(unsigned char[20], SHA1_CTX*); 
+int  SHA1DCFinal(unsigned char[20], SHA1_CTX*);
 
 #if defined(__cplusplus)
 }
+#endif
+
+#ifdef SHA1DC_CUSTOM_TRAILING_INCLUDE_SHA1_H
+#include SHA1DC_CUSTOM_TRAILING_INCLUDE_SHA1_H
 #endif
 
 #endif

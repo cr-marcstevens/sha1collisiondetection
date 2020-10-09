@@ -1,20 +1,136 @@
-/***
+
 * Copyright 2017 Marc Stevens <marc@marc-stevens.nl>, Dan Shumow (danshu@microsoft.com)
 * Distributed under the MIT Software License.
 * See accompanying file LICENSE.txt or copy at
 * https://opensource.org/licenses/MIT
-***/
 
+ master
+#ifndef SHA1DC_NO_STANDARD_INCLUDES
+=======
 #include "config.h"
 #include "sha1.h"
 #include "ubc_check.h"
 #include "simd/simd_config.h"
 
+ simd
 #include <string.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __unix__
+#include <sys/types.h> /* make sure macros like _BIG_ENDIAN visible */
+#endif
+#endif
 
+#ifdef SHA1DC_CUSTOM_INCLUDE_SHA1_C
+#include SHA1DC_CUSTOM_INCLUDE_SHA1_C
+#endif
+
+#ifndef SHA1DC_INIT_SAFE_HASH_DEFAULT
+#define SHA1DC_INIT_SAFE_HASH_DEFAULT 1
+#endif
+
+ master
+#include "sha1.h"
+#include "ubc_check.h"
+
+#if (defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || \
+     defined(i386) || defined(__i386) || defined(__i386__) || defined(__i486__)  || \
+     defined(__i586__) || defined(__i686__) || defined(_M_IX86) || defined(__X86__) || \
+     defined(_X86_) || defined(__THW_INTEL__) || defined(__I86__) || defined(__INTEL__) || \
+     defined(__386) || defined(_M_X64) || defined(_M_AMD64))
+#define SHA1DC_ON_INTEL_LIKE_PROCESSOR
+#endif
+   Because Little-Endian architectures are most common,
+   we only set SHA1DC_BIGENDIAN if one of these conditions is met.
+   Note that all MSFT platforms are little endian,
+   so none of these will be defined under the MSC compiler.
+   If you are compiling on a big endian platform and your compiler does not define one of these,
+   you will have to add whatever macros your tool chain defines to indicate Big-Endianness
+
+#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__)
+/*
+ * Should detect Big Endian under GCC since at least 4.6.0 (gcc svn
+ * rev #165881). See
+ * https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
+ *
+ * This also works under clang since 3.2, it copied the GCC-ism. See
+ * clang.git's 3b198a97d2 ("Preprocessor: add __BYTE_ORDER__
+ * predefined macro", 2012-07-27)
+ */
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define SHA1DC_BIGENDIAN
+#endif
+
+/* Not under GCC-alike */
+#elif defined(__BYTE_ORDER) && defined(__BIG_ENDIAN)
+ * Should detect Big Endian under glibc.git since 14245eb70e ("entered
+ * into RCS", 1992-11-25). Defined in <endian.h> which will have been
+ * brought in by standard headers. See glibc.git and
+ * https://sourceforge.net/p/predef/wiki/Endianness/
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define SHA1DC_BIGENDIAN
+#endif
+
+/* Not under GCC-alike or glibc */
+#elif defined(_BYTE_ORDER) && defined(_BIG_ENDIAN) && defined(_LITTLE_ENDIAN)
+/*
+ * *BSD and newlib (embeded linux, cygwin, etc).
+ * the defined(_BIG_ENDIAN) && defined(_LITTLE_ENDIAN) part prevents
+ * this condition from matching with Solaris/sparc.
+ * (Solaris defines only one endian macro)
+ */
+#if _BYTE_ORDER == _BIG_ENDIAN
+#define SHA1DC_BIGENDIAN
+#endif
+
+/* Not under GCC-alike or glibc or *BSD or newlib */
+#elif (defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
+       defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || \
+       defined(__sparc))
+ * Should define Big Endian for a whitelist of known processors. See
+ * https://sourceforge.net/p/predef/wiki/Endianness/ and
+ * http://www.oracle.com/technetwork/server-storage/solaris/portingtosolaris-138514.html
+#define SHA1DC_BIGENDIAN
+
+/* Not under GCC-alike or glibc or *BSD or newlib or <processor whitelist> */
+#elif (defined(_AIX) || defined(__hpux))
+
+/*
+ * Defines Big Endian on a whitelist of OSs that are known to be Big
+ * Endian-only. See
+ * https://public-inbox.org/git/93056823-2740-d072-1ebd-46b440b33d7e@felt.demon.nl/
+ */
+#define SHA1DC_BIGENDIAN
+
+/* Not under GCC-alike or glibc or *BSD or newlib or <processor whitelist> or <os whitelist> */
+#elif defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR)
+/*
+ * As a last resort before we do anything else we're not 100% sure
+ * about below, we blacklist specific processors here. We could add
+ * more, see e.g. https://wiki.debian.org/ArchitectureSpecificsMemo
+ */
+#else /* Not under GCC-alike or glibc or *BSD or newlib or <processor whitelist> or <os whitelist> or <processor blacklist> */
+
+/* We do nothing more here for now */
+/*#error "Uncomment this to see if you fall through all the detection"*/
+
+#endif /* Big Endian detection */
+
+#if (defined(SHA1DC_FORCE_LITTLEENDIAN) && defined(SHA1DC_BIGENDIAN))
+#undef SHA1DC_BIGENDIAN
+#endif
+#if (defined(SHA1DC_FORCE_BIGENDIAN) && !defined(SHA1DC_BIGENDIAN))
+#define SHA1DC_BIGENDIAN
+#endif
+/*ENDIANNESS SELECTION*/
+
+#ifndef SHA1DC_FORCE_ALIGNED_ACCESS
+#if defined(SHA1DC_FORCE_UNALIGNED_ACCESS) || defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR)
+#define SHA1DC_ALLOW_UNALIGNED_ACCESS
+#endif /*UNALIGNED ACCESS DETECTION*/
+#endif /*FORCE ALIGNED ACCESS*/
+=======
 #define sha1_bswap32(x) \
 	{x = ((x << 8) & 0xFF00FF00) | ((x >> 8) & 0xFF00FF); x = (x << 16) | (x >> 16);}
 #define sha1_loadbyte(m, t, s) (((uint32_t)(((const unsigned char*)(m+t))[s]))&0xFF)
@@ -37,6 +153,7 @@
 #define sha1_load(m, t, dest)  { dest = (sha1_loadbyte(m,t,0)<<24)^(sha1_loadbyte(m,t,1)<<16)^(sha1_loadbyte(m,t,2)<<8)^sha1_loadbyte(m,t,3); }
 #endif
 
+simd
 
 #define rotate_right(x,n) (((x)>>(n))|((x)<<(32-(n))))
 #define rotate_left(x,n)  (((x)<<(n))|((x)>>(32-(n))))
@@ -872,7 +989,7 @@ static void sha1recompress_fast_ ## t (uint32_t ihvin[5], uint32_t ihvout[5], co
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4127)  /* Complier complains about the checks in the above macro being constant. */
+#pragma warning(disable: 4127)  /* Compiler complains about the checks in the above macro being constant. */
 #endif
 
 #ifdef DOSTORESTATE0
@@ -1617,6 +1734,8 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0xFFFFFFFF };
 	uint32_t ihvtmp[5];
 
+
+
 #ifdef SHA1DC_HAVE_SIMD
 	if (ctx->ubc_check == 0 && ctx->safe_hash == 0 && ctx->simd > 0)
 	{
@@ -1624,7 +1743,6 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 		return;
 	}
 #endif
-
 	ctx->ihv1[0] = ctx->ihv[0];
 	ctx->ihv1[1] = ctx->ihv[1];
 	ctx->ihv1[2] = ctx->ihv[2];
@@ -1693,7 +1811,7 @@ void SHA1DCInit(SHA1_CTX* ctx)
 	ctx->ihv[3] = 0x10325476;
 	ctx->ihv[4] = 0xC3D2E1F0;
 	ctx->found_collision = 0;
-	ctx->safe_hash = 1;
+	ctx->safe_hash = SHA1DC_INIT_SAFE_HASH_DEFAULT;
 	ctx->ubc_check = 1;
 	ctx->detect_coll = 1;
 	ctx->reduced_round_coll = 0;
@@ -1704,50 +1822,51 @@ void SHA1DCInit(SHA1_CTX* ctx)
 #else
 	ctx->simd = -1;
 #endif
-}
+
 
 void SHA1DCSetSafeHash(SHA1_CTX* ctx, int safehash)
-{
+
 	if (safehash)
 		ctx->safe_hash = 1;
 	else
 		ctx->safe_hash = 0;
-}
+
 
 
 void SHA1DCSetUseUBC(SHA1_CTX* ctx, int ubc_check)
-{
+
 	if (ubc_check)
 		ctx->ubc_check = 1;
 	else
 		ctx->ubc_check = 0;
-}
+
 
 void SHA1DCSetUseDetectColl(SHA1_CTX* ctx, int detect_coll)
-{
+
 	if (detect_coll)
 		ctx->detect_coll = 1;
 	else
 		ctx->detect_coll = 0;
-}
+
 
 void SHA1DCSetDetectReducedRoundCollision(SHA1_CTX* ctx, int reduced_round_coll)
-{
+
 	if (reduced_round_coll)
 		ctx->reduced_round_coll = 1;
 	else
 		ctx->reduced_round_coll = 0;
-}
+
 
 void SHA1DCSetCallback(SHA1_CTX* ctx, collision_block_callback callback, void* callback_data)
-{
+
 	ctx->callback = callback;
 	ctx->callback_data = callback_data;
-}
+
 
 void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
-{
+
 	unsigned left, fill;
+
 	if (len == 0)
 		return;
 
@@ -1755,38 +1874,39 @@ void SHA1DCUpdate(SHA1_CTX* ctx, const char* buf, size_t len)
 	fill = 64 - left;
 
 	if (left && len >= fill)
-	{
+	
 		ctx->total += fill;
 		memcpy(ctx->buffer + left, buf, fill);
 		sha1_process(ctx, (uint32_t*)(ctx->buffer));
 		buf += fill;
 		len -= fill;
 		left = 0;
-	}
+	
 	while (len >= 64)
-	{
+	
 		ctx->total += 64;
+
+#if defined(SHA1DC_ALLOW_UNALIGNED_ACCESS)
 		sha1_process(ctx, (uint32_t*)(buf));
+#else
+		memcpy(ctx->buffer, buf, 64);
+		sha1_process(ctx, (uint32_t*)(ctx->buffer));
+#endif /* defined(SHA1DC_ALLOW_UNALIGNED_ACCESS) */
 		buf += 64;
 		len -= 64;
-	}
+
 	if (len > 0)
-	{
+	
 		ctx->total += len;
 		memcpy(ctx->buffer + left, buf, len);
-	}
-}
 
-static const unsigned char sha1_padding[64] =
-{
+
+static const unsigned char sha1_padding[64]
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
-int SHA1DCFinal(unsigned char output[20], SHA1_CTX *ctx)
-{
+int SHA1DCFinal(unsigned char output[20], SHA1_CTX *ctx
 	uint32_t last = ctx->total & 63;
 	uint32_t padn = (last < 56) ? (56 - last) : (120 - last);
 	uint64_t total;
@@ -1824,4 +1944,6 @@ int SHA1DCFinal(unsigned char output[20], SHA1_CTX *ctx)
 	output[18] = (unsigned char)(ctx->ihv[4] >> 8);
 	output[19] = (unsigned char)(ctx->ihv[4]);
 	return ctx->found_collision;
-}
+
+#ifdef SHA1DC_CUSTOM_TRAILING_INCLUDE_SHA1_C
+#include SHA1DC_CUSTOM_TRAILING_INCLUDE_SHA1_C
