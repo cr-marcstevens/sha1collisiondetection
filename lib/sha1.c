@@ -84,7 +84,7 @@
 /* Not under GCC-alike or glibc or *BSD or newlib */
 #elif (defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
        defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || \
-       defined(__sparc))
+       defined(__sparc) || (defined(__powerpc) && defined(__xlc__)))
 /*
  * Should define Big Endian for a whitelist of known processors. See
  * https://sourceforge.net/p/predef/wiki/Endianness/ and
