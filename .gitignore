@@ -13,6 +13,10 @@
 *.dylib
 *.dll
 
+# Profiling
+*.gcda
+*.gcno
+
 # Fortran module files
 *.mod
 *.smod
