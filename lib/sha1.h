@@ -41,6 +41,20 @@ typedef void(*sha1_recompression_type)(uint32_t*, uint32_t*, const uint32_t*, co
 /* extern sha1_recompression_type sha1_recompression_step[80];*/
 
 /* a callback function type that can be set to be called when a collision block has been found: */
+
+#ifdef SHA1DC_CALLBACK_USES_PARAM
+
+    // void collision_block_callback(void* param, uint64_t byteoffset, const uint32_t ihvin1[5], const uint32_t ihvin2[5], const uint32_t m1[80], const uint32_t m2[80])
+    typedef void(SHA1DC_API * collision_block_callback)(void* param, uint64_t, const uint32_t*, const uint32_t*, const uint32_t*, const uint32_t*);
+
+#else
+
+    // void collision_block_callback(uint64_t byteoffset, const uint32_t ihvin1[5], const uint32_t ihvin2[5], const uint32_t m1[80], const uint32_t m2[80])
+    typedef void(SHA1DC_API * collision_block_callback)(uint64_t, const uint32_t*, const uint32_t*, const uint32_t*, const uint32_t*);
+
+#endif
+=========
+/* A callback function type that can be set to be called when a collision block has been found: */
 /* void collision_block_callback(uint64_t byteoffset, const uint32_t ihvin1[5], const uint32_t ihvin2[5], const uint32_t m1[80], const uint32_t m2[80]) */
 typedef void(*collision_block_callback)(uint64_t, const uint32_t*, const uint32_t*, const uint32_t*, const uint32_t*);
 
@@ -66,6 +80,9 @@ typedef struct {
 } SHA1_CTX;
 
 /* initialize SHA-1 context */
+void SHA1DC_API SHA1DCInit(SHA1_CTX*);
+=========
+/* Initialize SHA-1 context. */
 void SHA1DCInit(SHA1_CTX*);
 
 /*
@@ -89,6 +106,18 @@ void SHA1DCSetUseUBC(SHA1_CTX*, int);
 
 /* function to disable or enable the use of Collision Detection */
 /* enabled by default */
+void SHA1DC_API SHA1DCSetUseDetectColl(SHA1_CTX*, int);
+=========
+/*
+    Function to disable or enable the use of Unavoidable Bitconditions (provides a significant speed up).
+    Enabled by default
+ */
+void SHA1DCSetUseUBC(SHA1_CTX*, int);
+
+/*
+    Function to disable or enable the use of Collision Detection.
+    Enabled by default.
+ */
 void SHA1DCSetUseDetectColl(SHA1_CTX*, int);
 
 /* function to disable or enable the detection of reduced-round SHA-1 collisions */
@@ -109,7 +138,11 @@ void SHA1DC_API SHA1DCUpdate(SHA1_CTX*, const char*, size_t);
 
 /* obtain SHA-1 hash from SHA-1 context */
 /* returns: 0 = no collision detected, otherwise = collision found => warn user for active attack */
-int  SHA1DCFinal(unsigned char[20], SHA1_CTX*); 
+<<<<<<<<< Temporary merge branch 1
+int SHA1DC_API SHA1DCFinal(unsigned char[20], SHA1_CTX*); 
+=========
+int  SHA1DCFinal(unsigned char[20], SHA1_CTX*);
+>>>>>>>>> Temporary merge branch 2
 
 #if defined(__cplusplus)
 }
