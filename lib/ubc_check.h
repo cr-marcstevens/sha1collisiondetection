@@ -27,7 +27,9 @@
 extern "C" {
 #endif
 
+#ifndef SHA1DC_NO_STANDARD_INCLUDES
 #include <stdint.h>
+#endif
 
 #define DVMASKSIZE 1
 typedef struct { int dvType; int dvK; int dvB; int testt; int maski; int maskb; uint32_t dm[80]; } dv_info_t;
@@ -41,6 +43,10 @@ void ubc_check(const uint32_t W[80], uint32_t dvmask[DVMASKSIZE]);
 
 #if defined(__cplusplus)
 }
+#endif
+
+#ifdef SHA1DC_CUSTOM_TRAILING_INCLUDE_UBC_CHECK_H
+#include SHA1DC_CUSTOM_TRAILING_INCLUDE_UBC_CHECK_H
 #endif
 
 #endif
