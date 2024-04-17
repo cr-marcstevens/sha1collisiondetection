@@ -28,3 +28,22 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+#include <sha1dc/sha1.h>
+
+SHA1_CTX ctx;
+unsigned char hash[20];
+SHA1DCInit(&ctx);
+
+/** disable safe-hash mode (safe-hash mode is enabled by default) **/
+// SHA1DCSetSafeHash(&ctx, 0);
+/** disable use of unavoidable attack conditions to speed up detection (enabled by default) **/
+// SHA1DCSetUseUBC(&ctx, 0); 
+
+SHA1DCUpdate(&ctx, buffer, (unsigned)(size));
+
+int iscoll = SHA1DCFinal(hash,&ctx);
+if (iscoll)
+    printf("collision detected");
+else
+    printf("no collision detected");
+
