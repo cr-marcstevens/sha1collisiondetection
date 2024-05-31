@@ -88,7 +88,7 @@
 /*
  * Should define Big Endian for a whitelist of known processors. See
  * https://sourceforge.net/p/predef/wiki/Endianness/ and
- * http://www.oracle.com/technetwork/server-storage/solaris/portingtosolaris-138514.html
+ * https://www.oracle.com/solaris/solaris11/downloads/solaris-downloads.html
  */
 #define SHA1DC_BIGENDIAN
 
