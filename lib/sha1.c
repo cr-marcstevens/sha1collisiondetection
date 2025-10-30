@@ -976,43 +976,43 @@ static void sha1recompress_fast_ ## t (uint32_t ihvin[5], uint32_t ihvout[5], co
 #pragma warning(disable: 4127)  /* Compiler complains about the checks in the above macro being constant. */
 #endif
 
-#ifdef DOSTORESTATE0
+#ifdef DOSTORESTATE00
 SHA1_RECOMPRESS(0)
 #endif
 
-#ifdef DOSTORESTATE1
+#ifdef DOSTORESTATE01
 SHA1_RECOMPRESS(1)
 #endif
 
-#ifdef DOSTORESTATE2
+#ifdef DOSTORESTATE02
 SHA1_RECOMPRESS(2)
 #endif
 
-#ifdef DOSTORESTATE3
+#ifdef DOSTORESTATE03
 SHA1_RECOMPRESS(3)
 #endif
 
-#ifdef DOSTORESTATE4
+#ifdef DOSTORESTATE04
 SHA1_RECOMPRESS(4)
 #endif
 
-#ifdef DOSTORESTATE5
+#ifdef DOSTORESTATE05
 SHA1_RECOMPRESS(5)
 #endif
 
-#ifdef DOSTORESTATE6
+#ifdef DOSTORESTATE06
 SHA1_RECOMPRESS(6)
 #endif
 
-#ifdef DOSTORESTATE7
+#ifdef DOSTORESTATE07
 SHA1_RECOMPRESS(7)
 #endif
 
-#ifdef DOSTORESTATE8
+#ifdef DOSTORESTATE08
 SHA1_RECOMPRESS(8)
 #endif
 
-#ifdef DOSTORESTATE9
+#ifdef DOSTORESTATE09
 SHA1_RECOMPRESS(9)
 #endif
 
@@ -1304,52 +1304,52 @@ static void sha1_recompression_step(uint32_t step, uint32_t ihvin[5], uint32_t i
 {
 	switch (step)
 	{
-#ifdef DOSTORESTATE0
+#ifdef DOSTORESTATE00
 	case 0:
 		sha1recompress_fast_0(ihvin, ihvout, me2, state);
 		break;
 #endif
-#ifdef DOSTORESTATE1
+#ifdef DOSTORESTATE01
 	case 1:
 		sha1recompress_fast_1(ihvin, ihvout, me2, state);
 		break;
 #endif
-#ifdef DOSTORESTATE2
+#ifdef DOSTORESTATE02
 	case 2:
 		sha1recompress_fast_2(ihvin, ihvout, me2, state);
 		break;
 #endif
-#ifdef DOSTORESTATE3
+#ifdef DOSTORESTATE03
 	case 3:
 		sha1recompress_fast_3(ihvin, ihvout, me2, state);
 		break;
 #endif
-#ifdef DOSTORESTATE4
+#ifdef DOSTORESTATE04
 	case 4:
 		sha1recompress_fast_4(ihvin, ihvout, me2, state);
 		break;
 #endif
-#ifdef DOSTORESTATE5
+#ifdef DOSTORESTATE05
 	case 5:
 		sha1recompress_fast_5(ihvin, ihvout, me2, state);
 		break;
 #endif
-#ifdef DOSTORESTATE6
+#ifdef DOSTORESTATE06
 	case 6:
 		sha1recompress_fast_6(ihvin, ihvout, me2, state);
 		break;
 #endif
-#ifdef DOSTORESTATE7
+#ifdef DOSTORESTATE07
 	case 7:
 		sha1recompress_fast_7(ihvin, ihvout, me2, state);
 		break;
 #endif
-#ifdef DOSTORESTATE8
+#ifdef DOSTORESTATE08
 	case 8:
 		sha1recompress_fast_8(ihvin, ihvout, me2, state);
 		break;
 #endif
-#ifdef DOSTORESTATE9
+#ifdef DOSTORESTATE09
 	case 9:
 		sha1recompress_fast_9(ihvin, ihvout, me2, state);
 		break;
