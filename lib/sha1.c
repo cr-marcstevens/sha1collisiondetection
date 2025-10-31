@@ -86,30 +86,30 @@
        defined(__MIPSEB__) || defined(__MIPSEB) || defined(_MIPSEB) || \
        defined(__sparc))
 /*
- * Should define Big Endian for a whitelist of known processors. See
+ * Should define Big Endian for an allowlist of known processors. See
  * https://sourceforge.net/p/predef/wiki/Endianness/ and
  * http://www.oracle.com/technetwork/server-storage/solaris/portingtosolaris-138514.html
  */
 #define SHA1DC_BIGENDIAN
 
-/* Not under GCC-alike or glibc or *BSD or newlib or <processor whitelist> */
+/* Not under GCC-alike or glibc or *BSD or newlib or <processor allowlist> */
 #elif (defined(_AIX) || defined(__hpux))
 
 /*
- * Defines Big Endian on a whitelist of OSs that are known to be Big
+ * Defines Big Endian on an allowlist of OSs that are known to be Big
  * Endian-only. See
  * https://public-inbox.org/git/93056823-2740-d072-1ebd-46b440b33d7e@felt.demon.nl/
  */
 #define SHA1DC_BIGENDIAN
 
-/* Not under GCC-alike or glibc or *BSD or newlib or <processor whitelist> or <os whitelist> */
+/* Not under GCC-alike or glibc or *BSD or newlib or <processor allowlist> or <os allowlist> */
 #elif defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR)
 /*
  * As a last resort before we do anything else we're not 100% sure
- * about below, we blacklist specific processors here. We could add
+ * about below, we denylist specific processors here. We could add
  * more, see e.g. https://wiki.debian.org/ArchitectureSpecificsMemo
  */
-#else /* Not under GCC-alike or glibc or *BSD or newlib or <processor whitelist> or <os whitelist> or <processor blacklist> */
+#else /* Not under GCC-alike or glibc or *BSD or newlib or <processor allowlist> or <os allowlist> or <processor denylist> */
 
 /* We do nothing more here for now */
 /*#error "Uncomment this to see if you fall through all the detection"*/
