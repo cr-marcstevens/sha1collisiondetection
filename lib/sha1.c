@@ -26,6 +26,13 @@
 #include "sha1.h"
 #include "ubc_check.h"
 
+#if defined(__aarch64__) && defined(__AARCH64EL__) && \
+	(defined(__ARM_NEON) || defined(__ARM_NEON__)) && \
+	(defined(__ARM_FEATURE_SHA1) || defined(__ARM_FEATURE_CRYPTO))
+#include <arm_neon.h>
+#define SHA1DC_ARM_SHA1
+#endif
+
 #if (defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || \
      defined(i386) || defined(__i386) || defined(__i386__) || defined(__i486__)  || \
      defined(__i586__) || defined(__i686__) || defined(_M_IX86) || defined(__X86__) || \
@@ -124,6 +131,16 @@
 #endif
 /*ENDIANNESS SELECTION*/
 
+#if defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR) && !defined(SHA1DC_BIGENDIAN) && \
+	((defined(__GNUC__) && __GNUC__ >= 5) || defined(__clang__)) && \
+	(defined(__x86_64__) || defined(__x86_64) || \
+	 defined(__i386__) || defined(__i386))
+#include <cpuid.h>
+#include <immintrin.h>
+#define SHA1DC_X86_SHA1
+#define SHA1DC_X86_SHA1_TARGET __attribute__((target("sha,ssse3")))
+#endif
+
 #ifndef SHA1DC_FORCE_ALIGNED_ACCESS
 #if defined(SHA1DC_FORCE_UNALIGNED_ACCESS) || defined(SHA1DC_ON_INTEL_LIKE_PROCESSOR)
 #define SHA1DC_ALLOW_UNALIGNED_ACCESS
@@ -186,6 +203,404 @@
 
 
 #define SHA1_STORE_STATE(i) states[i][0] = a; states[i][1] = b; states[i][2] = c; states[i][3] = d; states[i][4] = e;
+
+#ifdef SHA1DC_ARM_SHA1
+/*
+ * Compute one SHA-1 block with ARMv8 SHA instructions while also saving the
+ * expanded message schedule needed by ubc_check(). This does not populate the
+ * intermediate states needed for recompression, so callers must use the scalar
+ * path whenever UBC reports a possible collision candidate.
+ */
+static void sha1_compression_arm_store_W(uint32_t ihv[5], const uint32_t block[16],
+					 uint32_t W[80])
+{
+	uint32x4_t abcd, abcd_save;
+	uint32x4_t tmp0, tmp1;
+	uint32x4_t msg0, msg1, msg2, msg3;
+	uint32_t e0, e0_save, e1;
+
+	abcd = vld1q_u32(&ihv[0]);
+	e0 = ihv[4];
+	abcd_save = abcd;
+	e0_save = e0;
+
+	msg0 = vld1q_u32(&block[0]);
+	msg1 = vld1q_u32(&block[4]);
+	msg2 = vld1q_u32(&block[8]);
+	msg3 = vld1q_u32(&block[12]);
+#ifndef SHA1DC_BIGENDIAN
+	msg0 = vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(msg0)));
+	msg1 = vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(msg1)));
+	msg2 = vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(msg2)));
+	msg3 = vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(msg3)));
+#endif
+#define SHA1_ARM_STORE_W(N, MSG) vst1q_u32(&W[(N) * 4], (MSG))
+	SHA1_ARM_STORE_W(0, msg0);
+	SHA1_ARM_STORE_W(1, msg1);
+	SHA1_ARM_STORE_W(2, msg2);
+	SHA1_ARM_STORE_W(3, msg3);
+
+	tmp0 = vaddq_u32(msg0, vdupq_n_u32(0x5A827999));
+	tmp1 = vaddq_u32(msg1, vdupq_n_u32(0x5A827999));
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1cq_u32(abcd, e0, tmp0);
+	tmp0 = vaddq_u32(msg2, vdupq_n_u32(0x5A827999));
+	msg0 = vsha1su0q_u32(msg0, msg1, msg2);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1cq_u32(abcd, e1, tmp1);
+	tmp1 = vaddq_u32(msg3, vdupq_n_u32(0x5A827999));
+	msg0 = vsha1su1q_u32(msg0, msg3);
+	SHA1_ARM_STORE_W(4, msg0);
+	msg1 = vsha1su0q_u32(msg1, msg2, msg3);
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1cq_u32(abcd, e0, tmp0);
+	tmp0 = vaddq_u32(msg0, vdupq_n_u32(0x5A827999));
+	msg1 = vsha1su1q_u32(msg1, msg0);
+	SHA1_ARM_STORE_W(5, msg1);
+	msg2 = vsha1su0q_u32(msg2, msg3, msg0);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1cq_u32(abcd, e1, tmp1);
+	tmp1 = vaddq_u32(msg1, vdupq_n_u32(0x6ED9EBA1));
+	msg2 = vsha1su1q_u32(msg2, msg1);
+	SHA1_ARM_STORE_W(6, msg2);
+	msg3 = vsha1su0q_u32(msg3, msg0, msg1);
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1cq_u32(abcd, e0, tmp0);
+	tmp0 = vaddq_u32(msg2, vdupq_n_u32(0x6ED9EBA1));
+	msg3 = vsha1su1q_u32(msg3, msg2);
+	SHA1_ARM_STORE_W(7, msg3);
+	msg0 = vsha1su0q_u32(msg0, msg1, msg2);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e1, tmp1);
+	tmp1 = vaddq_u32(msg3, vdupq_n_u32(0x6ED9EBA1));
+	msg0 = vsha1su1q_u32(msg0, msg3);
+	SHA1_ARM_STORE_W(8, msg0);
+	msg1 = vsha1su0q_u32(msg1, msg2, msg3);
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e0, tmp0);
+	tmp0 = vaddq_u32(msg0, vdupq_n_u32(0x6ED9EBA1));
+	msg1 = vsha1su1q_u32(msg1, msg0);
+	SHA1_ARM_STORE_W(9, msg1);
+	msg2 = vsha1su0q_u32(msg2, msg3, msg0);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e1, tmp1);
+	tmp1 = vaddq_u32(msg1, vdupq_n_u32(0x6ED9EBA1));
+	msg2 = vsha1su1q_u32(msg2, msg1);
+	SHA1_ARM_STORE_W(10, msg2);
+	msg3 = vsha1su0q_u32(msg3, msg0, msg1);
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e0, tmp0);
+	tmp0 = vaddq_u32(msg2, vdupq_n_u32(0x8F1BBCDC));
+	msg3 = vsha1su1q_u32(msg3, msg2);
+	SHA1_ARM_STORE_W(11, msg3);
+	msg0 = vsha1su0q_u32(msg0, msg1, msg2);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e1, tmp1);
+	tmp1 = vaddq_u32(msg3, vdupq_n_u32(0x8F1BBCDC));
+	msg0 = vsha1su1q_u32(msg0, msg3);
+	SHA1_ARM_STORE_W(12, msg0);
+	msg1 = vsha1su0q_u32(msg1, msg2, msg3);
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1mq_u32(abcd, e0, tmp0);
+	tmp0 = vaddq_u32(msg0, vdupq_n_u32(0x8F1BBCDC));
+	msg1 = vsha1su1q_u32(msg1, msg0);
+	SHA1_ARM_STORE_W(13, msg1);
+	msg2 = vsha1su0q_u32(msg2, msg3, msg0);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1mq_u32(abcd, e1, tmp1);
+	tmp1 = vaddq_u32(msg1, vdupq_n_u32(0x8F1BBCDC));
+	msg2 = vsha1su1q_u32(msg2, msg1);
+	SHA1_ARM_STORE_W(14, msg2);
+	msg3 = vsha1su0q_u32(msg3, msg0, msg1);
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1mq_u32(abcd, e0, tmp0);
+	tmp0 = vaddq_u32(msg2, vdupq_n_u32(0x8F1BBCDC));
+	msg3 = vsha1su1q_u32(msg3, msg2);
+	SHA1_ARM_STORE_W(15, msg3);
+	msg0 = vsha1su0q_u32(msg0, msg1, msg2);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1mq_u32(abcd, e1, tmp1);
+	tmp1 = vaddq_u32(msg3, vdupq_n_u32(0xCA62C1D6));
+	msg0 = vsha1su1q_u32(msg0, msg3);
+	SHA1_ARM_STORE_W(16, msg0);
+	msg1 = vsha1su0q_u32(msg1, msg2, msg3);
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1mq_u32(abcd, e0, tmp0);
+	tmp0 = vaddq_u32(msg0, vdupq_n_u32(0xCA62C1D6));
+	msg1 = vsha1su1q_u32(msg1, msg0);
+	SHA1_ARM_STORE_W(17, msg1);
+	msg2 = vsha1su0q_u32(msg2, msg3, msg0);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e1, tmp1);
+	tmp1 = vaddq_u32(msg1, vdupq_n_u32(0xCA62C1D6));
+	msg2 = vsha1su1q_u32(msg2, msg1);
+	SHA1_ARM_STORE_W(18, msg2);
+	msg3 = vsha1su0q_u32(msg3, msg0, msg1);
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e0, tmp0);
+	tmp0 = vaddq_u32(msg2, vdupq_n_u32(0xCA62C1D6));
+	msg3 = vsha1su1q_u32(msg3, msg2);
+	SHA1_ARM_STORE_W(19, msg3);
+	msg0 = vsha1su0q_u32(msg0, msg1, msg2);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e1, tmp1);
+	tmp1 = vaddq_u32(msg3, vdupq_n_u32(0xCA62C1D6));
+	msg0 = vsha1su1q_u32(msg0, msg3);
+
+	e1 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e0, tmp0);
+
+	e0 = vsha1h_u32(vgetq_lane_u32(abcd, 0));
+	abcd = vsha1pq_u32(abcd, e1, tmp1);
+
+	abcd = vaddq_u32(abcd, abcd_save);
+	e0 += e0_save;
+	vst1q_u32(&ihv[0], abcd);
+	ihv[4] = e0;
+#undef SHA1_ARM_STORE_W
+}
+#endif
+
+#ifdef SHA1DC_X86_SHA1
+/*
+ * Compute one SHA-1 block with Intel SHA-NI while saving the expanded message
+ * schedule words needed by ubc_check(). If UBC reports a possible collision
+ * candidate, the scalar path recomputes the full schedule before recompression.
+ */
+SHA1DC_X86_SHA1_TARGET
+static void sha1_compression_x86_store_W(uint32_t ihv[5], const uint32_t block[16],
+					 uint32_t W[80])
+{
+	const unsigned char *data = (const unsigned char *)block;
+	const __m128i mask =
+		_mm_set_epi8(0, 1, 2, 3, 4, 5, 6, 7,
+			     8, 9, 10, 11, 12, 13, 14, 15);
+	__m128i abcd, abcd_save, e000, e000_save, tmp;
+	__m128i msg0, msg1, msg2, msg3;
+	uint32_t eout[4];
+
+	abcd_save = _mm_loadu_si128((const __m128i *)&ihv[0]);
+	abcd_save = _mm_shuffle_epi32(abcd_save, 0x1B);
+	e000_save = _mm_set_epi32(ihv[4], 0, 0, 0);
+	abcd = abcd_save;
+
+#define SHA1_X86_LOAD(N) \
+	_mm_shuffle_epi8(_mm_loadu_si128((const __m128i *)(data + (N))), mask)
+#define SHA1_X86_STORE_W(N, MSG) \
+	_mm_storeu_si128((__m128i *)&W[N], _mm_shuffle_epi32((MSG), 0x1B))
+#define SHA1_X86_STORE_W35(MSG) \
+	W[35] = (uint32_t)_mm_cvtsi128_si32(MSG)
+#define SHA1_X86_STORE_W64(MSG) \
+	W[64] = (uint32_t)_mm_cvtsi128_si32(_mm_srli_si128((MSG), 12))
+
+	msg0 = SHA1_X86_LOAD(0);
+	msg1 = SHA1_X86_LOAD(16);
+	msg2 = SHA1_X86_LOAD(32);
+	msg3 = SHA1_X86_LOAD(48);
+
+	/* Rounds 0-3 */
+	e000 = _mm_add_epi32(e000_save, msg0);
+	tmp = abcd;
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 0);
+
+	/* Rounds 4-7 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg1);
+	e000 = abcd;
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 0);
+	msg0 = _mm_sha1msg1_epu32(msg0, msg1);
+
+	/* Rounds 8-11 */
+	e000 = _mm_sha1nexte_epu32(e000, msg2);
+	tmp = abcd;
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 0);
+	msg1 = _mm_sha1msg1_epu32(msg1, msg2);
+	msg0 = _mm_xor_si128(msg0, msg2);
+
+	/* Rounds 12-15 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg3);
+	e000 = abcd;
+	msg0 = _mm_sha1msg2_epu32(msg0, msg3);
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 0);
+	msg2 = _mm_sha1msg1_epu32(msg2, msg3);
+	msg1 = _mm_xor_si128(msg1, msg3);
+
+	/* Rounds 16-19 */
+	e000 = _mm_sha1nexte_epu32(e000, msg0);
+	tmp = abcd;
+	msg1 = _mm_sha1msg2_epu32(msg1, msg0);
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 0);
+	msg3 = _mm_sha1msg1_epu32(msg3, msg0);
+	msg2 = _mm_xor_si128(msg2, msg0);
+
+	/* Rounds 20-23 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg1);
+	e000 = abcd;
+	msg2 = _mm_sha1msg2_epu32(msg2, msg1);
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 1);
+	msg0 = _mm_sha1msg1_epu32(msg0, msg1);
+	msg3 = _mm_xor_si128(msg3, msg1);
+
+	/* Rounds 24-27 */
+	e000 = _mm_sha1nexte_epu32(e000, msg2);
+	tmp = abcd;
+	msg3 = _mm_sha1msg2_epu32(msg3, msg2);
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 1);
+	msg1 = _mm_sha1msg1_epu32(msg1, msg2);
+	msg0 = _mm_xor_si128(msg0, msg2);
+
+	/* Rounds 28-31 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg3);
+	e000 = abcd;
+	msg0 = _mm_sha1msg2_epu32(msg0, msg3);
+	SHA1_X86_STORE_W35(msg0);
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 1);
+	msg2 = _mm_sha1msg1_epu32(msg2, msg3);
+	msg1 = _mm_xor_si128(msg1, msg3);
+
+	/* Rounds 32-35 */
+	e000 = _mm_sha1nexte_epu32(e000, msg0);
+	tmp = abcd;
+	msg1 = _mm_sha1msg2_epu32(msg1, msg0);
+	SHA1_X86_STORE_W(36, msg1);
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 1);
+	msg3 = _mm_sha1msg1_epu32(msg3, msg0);
+	msg2 = _mm_xor_si128(msg2, msg0);
+
+	/* Rounds 36-39 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg1);
+	e000 = abcd;
+	msg2 = _mm_sha1msg2_epu32(msg2, msg1);
+	SHA1_X86_STORE_W(40, msg2);
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 1);
+	msg0 = _mm_sha1msg1_epu32(msg0, msg1);
+	msg3 = _mm_xor_si128(msg3, msg1);
+
+	/* Rounds 40-43 */
+	e000 = _mm_sha1nexte_epu32(e000, msg2);
+	tmp = abcd;
+	msg3 = _mm_sha1msg2_epu32(msg3, msg2);
+	SHA1_X86_STORE_W(44, msg3);
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 2);
+	msg1 = _mm_sha1msg1_epu32(msg1, msg2);
+	msg0 = _mm_xor_si128(msg0, msg2);
+
+	/* Rounds 44-47 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg3);
+	e000 = abcd;
+	msg0 = _mm_sha1msg2_epu32(msg0, msg3);
+	SHA1_X86_STORE_W(48, msg0);
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 2);
+	msg2 = _mm_sha1msg1_epu32(msg2, msg3);
+	msg1 = _mm_xor_si128(msg1, msg3);
+
+	/* Rounds 48-51 */
+	e000 = _mm_sha1nexte_epu32(e000, msg0);
+	tmp = abcd;
+	msg1 = _mm_sha1msg2_epu32(msg1, msg0);
+	SHA1_X86_STORE_W(52, msg1);
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 2);
+	msg3 = _mm_sha1msg1_epu32(msg3, msg0);
+	msg2 = _mm_xor_si128(msg2, msg0);
+
+	/* Rounds 52-55 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg1);
+	e000 = abcd;
+	msg2 = _mm_sha1msg2_epu32(msg2, msg1);
+	SHA1_X86_STORE_W(56, msg2);
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 2);
+	msg0 = _mm_sha1msg1_epu32(msg0, msg1);
+	msg3 = _mm_xor_si128(msg3, msg1);
+
+	/* Rounds 56-59 */
+	e000 = _mm_sha1nexte_epu32(e000, msg2);
+	tmp = abcd;
+	msg3 = _mm_sha1msg2_epu32(msg3, msg2);
+	SHA1_X86_STORE_W(60, msg3);
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 2);
+	msg1 = _mm_sha1msg1_epu32(msg1, msg2);
+	msg0 = _mm_xor_si128(msg0, msg2);
+
+	/* Rounds 60-63 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg3);
+	e000 = abcd;
+	msg0 = _mm_sha1msg2_epu32(msg0, msg3);
+	SHA1_X86_STORE_W64(msg0);
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 3);
+	msg2 = _mm_sha1msg1_epu32(msg2, msg3);
+	msg1 = _mm_xor_si128(msg1, msg3);
+
+	/* Rounds 64-67 */
+	e000 = _mm_sha1nexte_epu32(e000, msg0);
+	tmp = abcd;
+	msg1 = _mm_sha1msg2_epu32(msg1, msg0);
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 3);
+	msg3 = _mm_sha1msg1_epu32(msg3, msg0);
+	msg2 = _mm_xor_si128(msg2, msg0);
+
+	/* Rounds 68-71 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg1);
+	e000 = abcd;
+	msg2 = _mm_sha1msg2_epu32(msg2, msg1);
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 3);
+	msg3 = _mm_xor_si128(msg3, msg1);
+
+	/* Rounds 72-75 */
+	e000 = _mm_sha1nexte_epu32(e000, msg2);
+	tmp = abcd;
+	msg3 = _mm_sha1msg2_epu32(msg3, msg2);
+	abcd = _mm_sha1rnds4_epu32(abcd, e000, 3);
+
+	/* Rounds 76-79 */
+	tmp = _mm_sha1nexte_epu32(tmp, msg3);
+	e000 = abcd;
+	abcd = _mm_sha1rnds4_epu32(abcd, tmp, 3);
+
+	e000_save = _mm_sha1nexte_epu32(e000, e000_save);
+	abcd_save = _mm_add_epi32(abcd, abcd_save);
+	abcd_save = _mm_shuffle_epi32(abcd_save, 0x1B);
+
+	_mm_storeu_si128((__m128i *)&ihv[0], abcd_save);
+	_mm_storeu_si128((__m128i *)eout, e000_save);
+	ihv[4] = eout[3];
+
+#undef SHA1_X86_LOAD
+#undef SHA1_X86_STORE_W
+#undef SHA1_X86_STORE_W35
+#undef SHA1_X86_STORE_W64
+}
+
+static int sha1dc_x86_sha1_supported(void)
+{
+	static int supported = -1;
+	int ret = __atomic_load_n(&supported, __ATOMIC_RELAXED);
+	unsigned int eax, ebx, ecx, edx;
+
+	if (ret < 0) {
+		ret = __get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx) &&
+		      (ebx & (1U << 29));
+		__atomic_store_n(&supported, ret, __ATOMIC_RELAXED);
+	}
+	return ret;
+}
+#endif
 
 #ifdef BUILDNOCOLLDETECTSHA1COMPRESSION
 void sha1_compression(uint32_t ihv[5], const uint32_t m[16])
@@ -1717,18 +2132,73 @@ static void sha1_process(SHA1_CTX* ctx, const uint32_t block[16])
 	unsigned i, j;
 	uint32_t ubc_dv_mask[DVMASKSIZE] = { 0xFFFFFFFF };
 	uint32_t ihvtmp[5];
+	int ubc_checked = 0;
+#if defined(SHA1DC_ARM_SHA1) || defined(SHA1DC_X86_SHA1)
+	uint32_t ihv_save[5];
+	int used_hw = 0;
+#endif
 
-	ctx->ihv1[0] = ctx->ihv[0];
-	ctx->ihv1[1] = ctx->ihv[1];
-	ctx->ihv1[2] = ctx->ihv[2];
-	ctx->ihv1[3] = ctx->ihv[3];
-	ctx->ihv1[4] = ctx->ihv[4];
+#if defined(SHA1DC_ARM_SHA1) || defined(SHA1DC_X86_SHA1)
+	/*
+	 * The hardware path does not populate ctx->states, so it can be used
+	 * directly only when collision detection is off or when UBC can reject
+	 * the block before recompression needs those states.
+	 */
+	if (!ctx->detect_coll || ctx->ubc_check)
+	{
+#ifdef SHA1DC_ARM_SHA1
+		ihv_save[0] = ctx->ihv[0];
+		ihv_save[1] = ctx->ihv[1];
+		ihv_save[2] = ctx->ihv[2];
+		ihv_save[3] = ctx->ihv[3];
+		ihv_save[4] = ctx->ihv[4];
+		sha1_compression_arm_store_W(ctx->ihv, block, ctx->m1);
+		used_hw = 1;
+#elif defined(SHA1DC_X86_SHA1)
+		if (sha1dc_x86_sha1_supported())
+		{
+			ihv_save[0] = ctx->ihv[0];
+			ihv_save[1] = ctx->ihv[1];
+			ihv_save[2] = ctx->ihv[2];
+			ihv_save[3] = ctx->ihv[3];
+			ihv_save[4] = ctx->ihv[4];
+			sha1_compression_x86_store_W(ctx->ihv, block, ctx->m1);
+			used_hw = 1;
+		}
+#endif
+		if (used_hw)
+		{
+			if (!ctx->detect_coll)
+				return;
 
-	sha1_compression_states(ctx->ihv, block, ctx->m1, ctx->states);
+			ubc_check(ctx->m1, ubc_dv_mask);
+			ubc_checked = 1;
+			if (ubc_dv_mask[0] == 0)
+				return;
+
+			ctx->ihv[0] = ihv_save[0];
+			ctx->ihv[1] = ihv_save[1];
+			ctx->ihv[2] = ihv_save[2];
+			ctx->ihv[3] = ihv_save[3];
+			ctx->ihv[4] = ihv_save[4];
+			used_hw = 0;
+		}
+	}
+
+	if (!used_hw)
+#endif
+	{
+		ctx->ihv1[0] = ctx->ihv[0];
+		ctx->ihv1[1] = ctx->ihv[1];
+		ctx->ihv1[2] = ctx->ihv[2];
+		ctx->ihv1[3] = ctx->ihv[3];
+		ctx->ihv1[4] = ctx->ihv[4];
+		sha1_compression_states(ctx->ihv, block, ctx->m1, ctx->states);
+	}
 
 	if (ctx->detect_coll)
 	{
-		if (ctx->ubc_check)
+		if (ctx->ubc_check && !ubc_checked)
 		{
 			ubc_check(ctx->m1, ubc_dv_mask);
 		}
