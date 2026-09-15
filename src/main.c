@@ -43,19 +43,23 @@ int main(int argc, char** argv)
 	size_t size;
 	SHA1_CTX ctx2;
 	int i,j,foundcollision;
+	const char *progname;
 
 	if (argc < 2)
 	{
-		fprintf(stderr, "Usage: %s <file>\n", basename(argv[0]));
+		progname = basename(argv[0]);
+		fprintf(stderr, "Usage: %s <file>\n", progname);
 		return 1;
 	}
+
+	progname = basename(argv[0]);
 
 	for (i=1; i < argc; ++i)
 	{
 		SHA1DCInit(&ctx2);
 
 		/* if the program name includes the word 'partial' then also test for reduced-round SHA-1 collisions */
-		if (NULL != strstr(argv[0], "partial"))
+		if (NULL != progname && NULL != strstr(progname, "partial"))
 		{
 			SHA1DCSetDetectReducedRoundCollision(&ctx2, 1);
 		}
