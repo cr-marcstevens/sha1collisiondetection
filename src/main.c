@@ -88,6 +88,7 @@ int main(int argc, char** argv)
 			fprintf(stderr, "not end of file?: %s: %s\n", argv[i], strerror(errno));
 			return 1;
 		}
+		fclose(fd);
 
 		foundcollision = SHA1DCFinal(hash2,&ctx2);
 
@@ -104,8 +105,6 @@ int main(int argc, char** argv)
 		{
 			printf("%s  %s\n", buffer, argv[i]);
 		}
-
-		fclose(fd);
 	}
 	return 0;
 }
